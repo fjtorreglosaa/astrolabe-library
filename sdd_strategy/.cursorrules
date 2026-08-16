@@ -1,0 +1,229 @@
+# Astrolabe Books — Cursor Rules
+# SDD+ Methodology v1.0
+
+## RULE 0 — READ BEFORE ANYTHING ELSE
+Before any action in this repository:
+1. Read sdd_strategy/README.md
+2. Read sdd_strategy/specs/global_spec.md
+3. Read sdd_strategy/specs/global_tech_spec.md
+4. Read the relevant domain spec files for this task
+5. Apply the Freshness Protocol
+
+## RULE 1 — FRESHNESS PROTOCOL (MANDATORY BEFORE EVERY TASK)
+Check Last reviewed date on all related spec files.
+0 stale: proceed immediately.
+1-3 stale (> 7 days): update them before proceeding.
+4+ stale: create a task in global_task_spec.md and stop. Notify the user.
+
+## RULE 2 — SPEC BEFORE CODE
+Never write implementation code for something not in a spec.
+If a task requires something not in the specs, update the spec first, then implement.
+
+## RULE 3 — ARCHITECTURE DEPENDENCY RULES
+Domain         -> no external project references, zero external NuGet packages
+Application    -> Domain only
+Infrastructure -> Application + Domain
+Presentation   -> Application + Infrastructure
+Tests          -> only the project under test
+Never add a reference that violates these rules.
+
+## RULE 4 — CQRS RULES
+Commands implement ICommand, handlers return Task<Result>
+Queries implement IQuery<T>, handlers return Task<Result<T>>
+Inject ISender in controllers and jobs (not IMediator unless Publish() is needed)
+Validate inside handlers — no pipeline behavior classes
+Use built-in logging tools — do not create a LoggingBehavior class
+CancellationToken is always the last parameter and is propagated to every async call
+
+## RULE 5 — TASK TRACKING (MANDATORY AFTER EVERY TASK)
+Mark the task with a completed marker in the relevant tasks.md
+Add a row to the Completion Log with date and notes
+Update the progress percentage in the Progress Summary
+Update global_task_spec.md if it was a global or cross-domain task
+
+## RULE 6 — NO ASSUMPTIONS
+If something is ambiguous or not covered by the specs:
+- Do NOT assume and proceed
+- Ask the user for clarification
+- Reference the specific spec section that is unclear
+Wait for clarification before writing any code.
+
+## RULE 7 — DOMAIN GROWTH MONITORING
+If you detect any domain exceeding these thresholds:
+  - more than 20 business rules
+  - more than 40 tasks
+  - more than 15 commands + queries combined
+  - more than 8 entities / aggregates
+  - more than 600 lines in technical.md
+Create a task in global_task_spec.md immediately.
+Do NOT split the domain without explicit human approval.
+Domains currently under watch: catalog, billing, identity.
+
+## RULE 8 — SECURITY (NON-NEGOTIABLE)
+Secrets, API keys, passwords, connection strings: never in committed files.
+Use environment variables or a secrets manager for development.
+Passwords: always hash before persistence. Never store or log plain text.
+API error responses: never include stack traces or internal exception details.
+AI provider keys are encrypted at rest and never returned by any API response.
+
+## RULE 9 — COMMIT FORMAT
+{type}({task-id}): {description}
+Types: feat | fix | test | refactor | docs | chore
+Example: feat(IDN-001): add RegisterCommand handler
+One task per commit. Pass all existing tests before committing.
+
+## PROJECT-SPECIFIC RULES
+
+## RULE 10 — AUTHORITY PRECEDENCE
+1. The prototype in docs/design/ — product behaviour, UI, copy, business rules
+2. SDD_PLIUS_STRATEGY.md — process, structure, spec format, agent rules
+3. GUIDELINES.md — architecture and stack where the two above are silent
+Never invent product behaviour. Read docs/design/prototype.source.js.
+
+## RULE 11 — UI RECONSTRUCTION
+The prototype uses inline styles, not Material UI.
+It is a visual and behavioural reference, never reusable code.
+Rebuild every screen on the Material UI theme defined in GUIDELINES.md section 38.1.
+Do not copy inline styles into the codebase.
+
+## RULE 12 — MONEY
+Every monetary amount is an integer number of cents.
+Never decimal, float, or double for money, in any layer, including DTOs and the database.
+
+## RULE 13 — COVERAGE MINIMUMS
+Domain 90% · Application 80% · Infrastructure 70% · Presentation 70% · Frontend 80%
+Every BR-* business rule has at least one unit test.
+No real HTTP calls or real database connections in unit tests.
+Each EF InMemory test gets a unique database name.
+
+## RULE 15 — FILE AND FOLDER ORGANISATION (NON-NEGOTIABLE)
+One public type per file. The file name matches the type name.
+Never group several interfaces or entities into one file.
+
+Each layer segregates by kind, and the namespace matches the folder:
+
+  Domain/
+      Abstractions/              base types shared by every domain
+          Repositories/          IRepository<TEntity>
+      Primitives/                Result, Error, Money
+      {Domain}/
+          Entities/
+          ValueObjects/
+          Events/
+          Errors/
+          Repositories/          the domain's repository interfaces
+
+  Application/
+      Abstractions/              interfaces only
+      Contracts/                 DTOs, messages, results
+      {Domain}/Commands|Queries/
+
+  Infrastructure/
+      Persistence/
+          Configurations/        one EF configuration per entity
+          Repositories/          one implementation per entity
+          Seeding/
+      {Concern}/                 Email, Time, ...
+
+  Presentation/
+      Controllers/ Middleware/ Options/ Extensions/
+
+## RULE 16 — REPOSITORY PATTERN
+Generic operations live on IRepository<TEntity> in Domain/Abstractions/Repositories.
+Every concrete contract extends it and adds only domain-specific capabilities:
+
+    public interface IReservationRepository : IRepository<Reservation>
+
+Implementations extend the base Repository<TEntity> in Infrastructure.
+Never declare a generic method again on a concrete interface.
+IQueryable, DbContext and EF tracking concepts never leave Infrastructure.
+
+## RULE 17 — FEATURE FOLDERS (NON-NEGOTIABLE)
+Application and Infrastructure group every domain under Features/.
+A new domain gets a folder there and nowhere else.
+
+  Application/
+      Abstractions/          interfaces only, grouped by concern
+      Contracts/             DTOs, messages, results
+      Features/
+          {Domain}/
+              Commands/{Name}/    one folder per command: the command and its handler
+              Queries/{Name}/     one folder per query
+              Services/           application services shared inside the domain
+
+A feature folder contains only Commands, Queries and Services. A cross-cutting concern such as mail
+composition is NOT a feature: it lives in its own top-level folder (Application/Mail/), with one
+template class per domain and a single shared options type. Putting it inside a feature adds a
+fourth kind of folder and duplicates shared configuration once per domain.
+
+  Infrastructure/
+      Features/{Domain}/     domain-specific implementations
+      Persistence/
+          Configurations/{Domain}/
+          Repositories/{Domain}/
+          Converters/ Migrations/ Seeding/
+      Integrations/{Provider}/    external providers: Mail, Ai, Payments
+      Time/
+
+Never place a domain folder directly under Application/ or Infrastructure/.
+
+## RULE 18 — UNIT OF WORK
+IUnitOfWork lives in Domain/Abstractions/Persistence and exposes SaveChangesAsync plus
+ExecuteInTransactionAsync.
+
+Every bounded context has its own unit of work extending it, exposing ONLY that context's
+repositories:
+
+    public interface IIdentityUnitOfWork : IUnitOfWork
+    {
+        IUserRepository Users { get; }
+        IUserSessionRepository Sessions { get; }
+    }
+
+Handlers depend on the unit of work, never on repositories directly. That keeps constructors small
+while a handler in one context still cannot see another context's repositories.
+
+Every repository reachable from a unit of work shares one change tracker, so a single
+SaveChangesAsync commits their staged work atomically. Repositories never call SaveChanges.
+
+Do not inject IDbContextFactory into a request-scoped handler: each call returns a new context with
+its own change tracker, which silently breaks the unit of work. The factory is only for work outside
+a request scope, such as a background job.
+
+## RULE 19 — DOMAIN EVENTS
+Aggregates raise events; SaveChangesAsync dispatches them after the commit succeeds.
+
+Anything that must happen whenever a state change occurs — regardless of which handler caused it —
+belongs in an event handler, not in each caller. Cache eviction on session revocation is the
+reference example: four rules end a session, and every one of them must evict, so the eviction is
+driven by the event and cannot be forgotten.
+
+A reaction runs after the commit, so it can be retried or lost. Never put a step the business
+outcome depends on in an event handler.
+
+## RULE 20 — NO CATCH-ALL FOLDERS
+A feature contains exactly three kinds: Commands, Queries and Events — the three message kinds of
+CQRS. There is no Services, Helpers, Utils or Common folder inside a feature.
+
+Logic shared across features is a concern with its own top-level folder under Shared/, named for
+what it is. If shared logic reacts to a state change, it is an event handler instead.
+
+## RULE 21 — COMMIT AT THE END OF EVERY STAGE
+A stage is not finished until its work is committed.
+
+Before committing, ALWAYS ask the user for approval. Never commit unprompted. Present first:
+  - the full build result (0 errors, 0 warnings)
+  - the full test result
+  - the file count and anything unusual in the change
+  - proof that no secret is staged
+
+Never stage .env or any file holding a real key, password or connection string. Verify it, do not
+assume .gitignore covered it.
+
+Commit message format is RULE 9: {type}({task-id}): {description}. A stage-closing commit uses the
+plan and stage as its identifier, for example: feat(PLAN-001-stage-1): identity and network.
+
+Pushing is a separate action and needs its own approval.
+
+## RULE 14 — LANGUAGE
+All repository content is written in English: code, comments, specs, docs, commit messages, and UI copy.

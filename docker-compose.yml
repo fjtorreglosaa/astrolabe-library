@@ -1,0 +1,72 @@
+name: astrolabe
+
+# Local development and integration environment.
+# A single `docker compose up` must leave the system usable, per PLAN-001 Stage 0.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: astrolabe-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-astrolabe}
+      POSTGRES_USER: ${POSTGRES_USER:-astrolabe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required. Copy .env.example to .env}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # The API waits on this, so it must prove the server accepts connections, not just that
+      # the process started.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-astrolabe} -d ${POSTGRES_DB:-astrolabe}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: astrolabe-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Database: "Host=db;Port=5432;Database=${POSTGRES_DB:-astrolabe};Username=${POSTGRES_USER:-astrolabe};Password=${POSTGRES_PASSWORD}"
+      Frontend__AllowedOrigins__0: "http://localhost:${WEB_PORT:-5173}"
+      Mail__FrontendBaseUrl: "http://localhost:${WEB_PORT:-5173}"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY is required. Copy .env.example to .env}
+      # Transactional email. The API key is read from .env and never baked into the image.
+      Mailgun__ApiKey: ${MAILGUN_API_KEY:?MAILGUN_API_KEY is required. Copy .env.example to .env}
+      Mailgun__Domain: ${MAILGUN_DOMAIN:?MAILGUN_DOMAIN is required}
+      Mailgun__BaseUrl: ${MAILGUN_BASE_URL:-https://api.mailgun.net}
+      Mailgun__FromAddress: ${MAILGUN_FROM_ADDRESS:?MAILGUN_FROM_ADDRESS is required}
+      Mailgun__FromDisplayName: ${MAILGUN_FROM_NAME:-Astrolabe Books}
+      Mailgun__IsSandbox: ${MAILGUN_IS_SANDBOX:-true}
+    ports:
+      - "${API_PORT:-5080}:8080"
+    # Readiness includes the database, so the web container only starts serving once the API can
+    # actually answer. The probe itself is declared in docker/api/Dockerfile, next to the curl it
+    # depends on, so the image stays self-describing outside compose too.
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: "http://localhost:${API_PORT:-5080}"
+    container_name: astrolabe-web
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    restart: unless-stopped
+
+volumes:
+  db-data:
+    name: astrolabe-db-data

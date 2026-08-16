@@ -1,0 +1,28 @@
+# --- Secrets ---
+.env
+*.env.local
+appsettings.*.local.json
+
+# --- .NET ---
+bin/
+obj/
+*.user
+*.suo
+[Tt]est[Rr]esults/
+coverage/
+*.coverage
+*.trx
+
+# --- Node ---
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# --- Editors ---
+.vs/
+.idea/
+*.swp
+
+# --- macOS ---
+.DS_Store

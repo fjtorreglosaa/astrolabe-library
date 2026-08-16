@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/Astrolabe.Application/Astrolabe.Application.csproj" />
+    <Project Path="src/backend/Astrolabe.Domain/Astrolabe.Domain.csproj" />
+    <Project Path="src/backend/Astrolabe.Infrastructure/Astrolabe.Infrastructure.csproj" />
+    <Project Path="src/backend/Astrolabe.Presentation/Astrolabe.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/backend/">
+    <Project Path="tests/backend/Astrolabe.Application.Tests/Astrolabe.Application.Tests.csproj" />
+    <Project Path="tests/backend/Astrolabe.Domain.Tests/Astrolabe.Domain.Tests.csproj" />
+    <Project Path="tests/backend/Astrolabe.Infrastructure.Tests/Astrolabe.Infrastructure.Tests.csproj" />
+    <Project Path="tests/backend/Astrolabe.Presentation.Tests/Astrolabe.Presentation.Tests.csproj" />
+  </Folder>
+</Solution>

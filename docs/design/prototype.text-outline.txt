@@ -1,0 +1,895 @@
+A
+Astrolabe Books
+Sign in to your account
+Borrow, buy and get books delivered.
+Email address
+Password
+Remember me
+Forgot your password?
+Signing in…
+Sign in
+arrow_forward
+Don't have an account yet?
+Sign up
+Demo accounts — password Testing1234* for all three:
+fjtorreglosaa@gmail.com member · admin@astrolabe.co admin · super@astrolabe.co super admin.
+© 2026 Astrolabe Books · New York · Chicago · Austin
+A
+Astrolabe Books
+Create your account
+We'll email you a link to activate it.
+Full name
+Email address
+Password
+Country
+{{ c }}
+City
+{{ c }}
+{{ termsBox }}
+I accept the
+terms of service and the use of my borrowing history for recommendations.
+Creating account…
+Create account
+arrow_forward
+Already have an account?
+Sign in
+Choose your plan
+{{ p.mark }}
+{{ p.name }}
+{{ p.price }}
+{{ p.per }}
+check {{ b }}
+You can switch plans any time from Settings. Max plan points accrue on every purchase.
+© 2026 Astrolabe Books · New York · Chicago · Austin
+A
+Astrolabe Books
+mark_email_unread
+Check your inbox
+We sent an activation link to {{ regEmail }} . Open it to confirm your account and start borrowing.
+workspace_premium {{ planSummary }}
+Activating… I've activated my account
+Sending… Resend email
+Back to sign in
+© 2026 Astrolabe Books · New York · Chicago · Austin
+A
+Astrolabe Books
+{{ item.label }}
+{{ item.icon }}
+{{ item.label }}
+{{ item.badge }}
+lock
+AI recommendations
+{{ aiStatus }}
+{{ aiCta }}
+{{ navIcon }}
+{{ pageTitle }}
+search
+{{ bellIcon }}
+{{ unreadBadge }}
+Notifications
+{{ unreadLine }}
+Mark all read
+notifications_off
+Notifications are off
+Nothing new will reach you until you turn them back on in Settings.
+inbox
+No notifications yet
+Due dates, payments and returns will show up here.
+{{ n.icon }}
+{{ n.title }}
+{{ n.body }}
+{{ n.time }}
+tune Notification settings
+Clear all
+{{ themeIcon }}
+FT
+expand_more
+FT
+{{ userName }}
+{{ userEmail }}
+{{ userRole }}
+View as
+{{ r.mark }} {{ r.label }}
+{{ mi.icon }} {{ mi.label }}
+{{ s.label }}
+{{ s.icon }}
+{{ s.value }}
+{{ s.note }}
+Active reservations
+View all
+{{ h.label }}
+{{ h.icon }}
+{{ l.title }}
+{{ l.author }}
+{{ l.due }}
+{{ l.status }}
+Working… {{ l.action }}
+lock
+Recommendations
+Personalised picks come with the Plus and Max plans. On Basic you can still browse the catalog and reserve at your home library.
+Compare plans
+auto_awesome
+Picked for you
+{{ r.title }}
+{{ r.author }}
+{{ r.why }}
+See all recommendations
+{{ f.label }}
+{{ resultCount }}
+{{ v.icon }}
+{{ b.genre }}
+{{ b.tier }}
+{{ b.title }}
+{{ b.author }}
+{{ b.availability }}
+star {{ b.rating }}
+{{ b.price }}
+lock {{ b.badge }}
+{{ b.btnLabel }}
+Details
+{{ h.label }}
+{{ h.icon }}
+Actions
+{{ b.title }}
+{{ b.author }}
+{{ b.genre }}
+{{ b.tier }}
+{{ b.availability }}
+lock {{ b.badge }}
+star {{ b.rating }}
+{{ b.price }}
+Details
+{{ b.btnLabel }}
+Rows per page
+5 10 25
+{{ catalogPager.pageInfo }}
+{{ catalogPager.info }}
+chevron_left
+chevron_right
+Check-in / Check-out
+{{ roleNote }}
+{{ r.label }}
+filter_list
+refresh
+{{ h.label }}
+{{ h.icon }}
+{{ l.title }}
+{{ l.author }}
+{{ l.from }}
+{{ l.due }}
+{{ l.delivery }}
+{{ l.status }}
+{{ l.rateIcon }} {{ l.rateLabel }}
+Working… {{ l.action }}
+{{ l.rateNote }}
+No reservations match this filter.
+Rows per page
+5 10 25
+{{ loansPager.info }}
+chevron_left
+chevron_right
+Outstanding fines
+{{ fineTotal }}
+$0.35 per day late, capped at $9.00 per title.
+Processing… Pay fines
+Your defaults
+Applied to every reservation and purchase. You can change it at checkout.
+{{ p.icon }}
+{{ p.label }}
+{{ p.value }}
+Change in settings
+auto_awesome
+Recommendation engine
+{{ aiLong }}
+refresh
+AI settings
+Reading your history and building fresh picks…
+{{ r.title }}
+{{ r.author }}
+{{ r.why }}
+{{ r.match }}
+Borrow
+FT
+{{ userName }}
+{{ memberSince }}
+{{ p.k }}
+{{ p.v }}
+Preferred topics
+{{ tp }}
++ Add
+Account statement
+filter_list
+refresh
+{{ h.label }}
+{{ h.icon }}
+{{ e.date }}
+{{ e.concept }}
+{{ e.kind }}
+{{ e.amount }}
+No entries match this filter.
+Rows per page
+5 10 25
+{{ ledgerPager.info }}
+chevron_left
+chevron_right
+Reading history
+{{ h.title }}
+{{ h.date }}
+Appearance
+Choose the interface theme.
+{{ o.icon }}
+{{ o.label }}
+{{ o.note }}
+Membership
+Your plan sets where you can borrow and how discounts apply.
+workspace_premium
+{{ planStatus.plan }}
+{{ planStatus.line }}
+schedule
+{{ planStatus.pendingLine }}
+Cancel scheduled change
+{{ p.mark }}
+{{ p.name }}
+{{ p.summary }}
+{{ p.note }}
+{{ p.price }}
+{{ p.per }}
+AI recommendations per library
+Each library runs on its own key. Members of a connected library get model-generated picks; everywhere else they see the most-borrowed fallback. Plus and Max members only — Basic never sees this surface.
+{{ lib.name }}
+{{ lib.status }}
+{{ lib.note }}
+{{ pv.label }}
+Testing…
+Save and test
+Turn off
+lock
+AI recommendations
+{{ aiLong }}
+Keys are managed by each library's staff, not by members — nothing to set up here. Currently connected: {{ aiLibCount }} .
+Upgrade to Plus
+Delivery, returns and purchases
+These are the options the app proposes by default. You can still switch them when you reserve or buy a book.
+{{ g.icon }}
+{{ g.label }}
+{{ g.note }}
+{{ o.mark }}
+{{ o.label }}
+{{ o.note }}
+Notification centre
+What reaches the bell in the header, and whether it makes a sound. Changes apply immediately.
+{{ bellIcon }} {{ notifChip }}
+{{ ns.label }}
+{{ ns.note }}
+Notifications and delivery
+{{ tg.label }}
+{{ tg.note }}
+Help & support
+Open a ticket and an agent from your library answers it. Every ticket keeps its number, its owner and the full conversation.
+add New ticket
+{{ tf.label }}
+{{ v.icon }}
+{{ tk.id }}
+{{ tk.statusIcon }} {{ tk.statusLabel }}
+star Rate the service
+Updated {{ tk.updated }}
+{{ tk.subject }}
+{{ tk.category }} · {{ tk.msgCount }}
+{{ tk.lastWho }}: {{ tk.lastText }}
+support_agent {{ tk.owner }}
+{{ tk.ratingStars }}
+View conversation
+Ticket
+Subject
+Category
+Status
+Updated
+Handled by
+Action
+{{ tk.id }}
+{{ tk.subject }}
+{{ tk.msgCount }}
+{{ tk.category }}
+{{ tk.statusIcon }} {{ tk.statusLabel }}
+Rate the service
+{{ tk.ratingStars }}
+{{ tk.updated }}
+{{ tk.owner }}
+Open
+No tickets match this filter.
+support_agent
+No tickets match this filter
+When something goes wrong with a reservation, a payment or your plan, open a ticket and we track it here.
+Before you write to us
+{{ h.q }}
+{{ h.a }}
+Support tickets
+Tickets opened by members of your libraries. Assign one to yourself, answer it and mark it resolved. The member is notified at every step and rates the service when it closes.
+{{ st.icon }} {{ st.k }}
+{{ st.v }}
+{{ tf.label }}
+search
+refresh
+Ticket
+Member
+Subject
+Created
+Owner
+Status
+Action
+{{ tk.id }}
+{{ tk.user }}
+{{ tk.library }}
+{{ tk.subject }}
+{{ tk.category }}
+{{ tk.created }}
+{{ tk.owner }}
+{{ tk.statusIcon }} {{ tk.statusLabel }}
+{{ tk.ratingStars }}
+Open
+No tickets match this filter.
+Manual payments
+Fines and subscriptions paid in cash or by card at the desk. The member arrives with a payment code; you check the amount, take the money and validate it here. {{ manualScope }}.
+point_of_sale Record a payment
+{{ st.k }}
+{{ st.v }}
+{{ mf.label }}
+Payment codes
+search
+refresh
+Code
+Member
+Concept
+Created
+Amount
+Status
+Action
+{{ m.code }}
+content_copy
+{{ m.user }}
+{{ m.email }}
+{{ m.kindIcon }}
+{{ m.concept }}
+{{ m.library }} · {{ m.method }}
+{{ m.created }}
+{{ m.amount }}
+{{ m.statusIcon }} {{ m.statusLabel }}
+{{ m.note }}
+Reject
+Validate
+Closed
+No payments match this filter.
+{{ role }} · {{ scopeLabel }}
+Opening…
+add Add book
+{{ sf.label }}
+Catalog
+filter_list
+refresh
+{{ h.label }}
+{{ h.icon }}
+Actions
+{{ b.title }}
+{{ b.author }}
+{{ b.isbn }}
+content_copy
+{{ b.genre }}
+{{ b.statusIcon }} {{ b.statusLabel }}
+{{ b.statusNote }}
+{{ b.copies }}
+{{ b.price }}
+{{ b.branch }}
+edit_note
+publish
+edit
+build
+delete
+undo
+delete
+restore_from_trash
+No books match this filter.
+Rows per page
+5 10 25
+{{ booksPager.pageInfo }}
+{{ booksPager.info }}
+chevron_left
+chevron_right
+Outstanding balance
+{{ fineTotal }}
+$0.35 per day late, capped at $9.00 per title.
+payments Pay fines
+check_circle All settled
+storefront
+{{ manualPending }} waiting to be paid at the desk
+Show code {{ pendingCode }} at the library within 72 hours. A librarian validates it and these fines clear automatically.
+content_copy Copy code
+Fines
+{{ fn.title }}
+{{ fn.reason }} · charged {{ fn.date }}
+{{ fn.chipLabel }}
+{{ fn.amount }}
+Payment methods
+Used for fines, purchases and delivery charges.
+add Add method
+{{ c.icon }}
+{{ c.brand }} •••• {{ c.last4 }}
+Expires {{ c.exp }} · {{ c.holder }}
+Default
+Make default
+Remove
+Payment history
+Date
+Description
+Method
+Receipt
+Amount
+{{ p.date }}
+{{ p.desc }}
+{{ p.method }}
+{{ p.receipt }}
+content_copy
+{{ p.amount }}
+{{ role }} · {{ scopeLabel }}
+{{ userCount }}
+{{ uf.label }}
+Directory
+filter_list
+refresh
+{{ h.label }}
+{{ h.icon }}
+Detail
+{{ u.initials }}
+{{ u.name }}
+{{ u.email }}
+{{ u.role }}
+{{ u.statusIcon }} {{ u.statusLabel }}
+{{ u.library }}
+{{ u.joined }}
+View
+No users match this filter.
+Rows per page
+5 10 25
+{{ usersPager.pageInfo }}
+{{ usersPager.info }}
+chevron_left
+chevron_right
+admin_panel_settings
+Super Admin
+Assign libraries to admins, appoint new admins and grant extended powers across the whole network.
+person_add New admin
+mark_email_unread {{ pendingNote }}
+{{ teamCount }}
+{{ v.icon }}
+{{ a.name }}
+{{ a.email }} · {{ a.since }}
+{{ a.statusIcon }} {{ a.chipLabel }}
+{{ a.count }}
+{{ a.libs }}
+Assign libraries
+Grant powers
+Sending…
+Resend email
+Revoke
+Administrator
+Status
+Libraries
+Added
+Actions
+{{ a.name }}
+{{ a.email }}
+{{ a.statusIcon }} {{ a.chipLabel }}
+{{ a.libs }}
+{{ a.count }}
+{{ a.since }}
+Assign
+Grant powers
+Sending…
+Resend email
+Revoke
+© 2026 Astrolabe Books
+Terms
+Privacy
+Help
+API
+{{ s.icon }}
+bolt
+Quick actions
+Jump straight to what you need.
+keyboard_tab
+{{ q.icon }}
+{{ q.label }}
+keyboard_tab
+{{ fabIcon }}
+{{ detail.title }}
+{{ detail.author }}
+Call number
+{{ detail.callNumber }}
+{{ detail.genre }}
+{{ detail.year }} · {{ detail.pages }} pages
+star {{ detail.rating }}
+{{ detail.blurb }}
+location_on
+Where to find it
+{{ detail.shelfLine }}
+{{ detail.branch }} · {{ detail.section }}
+{{ detail.shelfNote }}
+Availability
+{{ a.k }}
+{{ a.v }}
+Catalog record
+{{ r.k }}
+{{ r.v }}
+content_copy
+Retail price
+{{ detail.price }}
+Plan required
+{{ detail.tier }}
+Reserve 14 days
+Buy
+close
+{{ manualAction.icon }}
+{{ manualAction.title }}
+{{ manualAction.body }}
+{{ r.k }}
+{{ r.v }}
+Cancel
+Working…
+{{ manualAction.cta }}
+point_of_sale
+Record a payment taken at the desk
+Use this when the member pays without a code. It is validated the moment you save it.
+close
+Member
+Select a member…
+{{ p.label }}
+{{ manualNew.memberLine }}
+What is being paid
+{{ k.icon }} {{ k.label }}
+{{ pl.label }}
+Amount received
+How
+{{ mm.label }}
+Description
+The payment code and receipt number are generated for you.
+Cancel
+Saving…
+Record payment
+{{ rate.heading }}
+{{ rate.title }} · {{ rate.author }}
+close
+{{ rate.intro }}
+Your rating
+{{ st.icon }}
+{{ rate.label }}
+Your comment
+{{ rate.count }}
+Optional. Your name and initials appear next to it in the catalog.
+Remove review
+Cancel
+Publishing…
+Publish review
+workspace_premium
+{{ planModal.kicker }}
+{{ planModal.title }}
+close
+{{ planModal.sub }}
+{{ r.k }}
+{{ r.v }}
+{{ planModal.dueLabel }}
+{{ planModal.due }}
+{{ planModal.after }}
+What you give up
+remove {{ l }}
+Pay with
+{{ c.mark }}
+{{ c.label }}
+credit_card
+Add a payment method
+Keep current plan
+{{ planModal.cta }}
+help
+{{ planModal.confirmTitle }}
+{{ planModal.confirmBody }}
+Back
+Confirm
+Confirm reservation
+{{ reserve.title }}
+{{ reserve.author }} · {{ reserve.genre }} · {{ reserve.tier }} catalog
+close
+workspace_premium {{ reserve.planNote }}
+Choose a copy
+{{ c.mark }}
+{{ c.branch }}
+{{ c.count }}
+{{ c.reason }}
+How do you want it?
+{{ reserve.defaultNote }}
+{{ reserve.pickupMark }}
+Pick up at library
+{{ reserve.pickupNote }} · free
+{{ reserve.homeMark }}
+Home delivery
+24–48 h · extra charge
+Loan
+$0.00
+Delivery
+{{ reserve.feeLabel }}
+Total today
+{{ reserve.total }}
+{{ reserve.dueNote }}
+Reserving… Confirm reservation
+Cancel
+payments
+Payment
+Pay outstanding fines
+close
+What you are paying
+{{ it.mark }}
+{{ it.title }}
+{{ it.reason }} · {{ it.date }}
+{{ it.amount }}
+Pay with
+Add method
+{{ m.mark }}
+{{ m.icon }}
+{{ m.label }}
+{{ m.note }}
+{{ payModal.count }}
+{{ payModal.total }}
+Review payment
+{{ payModal.confirmTitle }}
+{{ payModal.count }}
+{{ payModal.total }}
+Method
+{{ payModal.methodLabel }}
+Total charged
+{{ payModal.total }}
+storefront {{ payModal.confirmNote }}
+Go back
+Charging…
+{{ payModal.confirmCta }}
+{{ payModal.doneIcon }}
+{{ payModal.doneTitle }}
+{{ payModal.doneBody }}
+{{ payModal.codeLabel }} {{ payModal.receipt }}
+content_copy
+Done
+credit_card
+{{ cardModal.preview }}
+Add a payment method
+close
+Cardholder name
+Card number
+Expiry
+CVC
+ZIP
+{{ cardModal.primaryMark }} Set as default payment method
+lock Card details are tokenised by the payment processor. Astrolabe stores only the brand and last four digits.
+Cancel
+Review card
+Save this card?
+{{ cardModal.confirmBody }}
+Go back
+Saving…
+Yes, save card
+Remove {{ cardRemove.label }}?
+Pending charges already authorised still go through. You can add the card again later.
+Keep it
+Removing…
+Yes, remove
+warning
+Leave without saving?
+You are about to leave this form. The card details you typed will be discarded.
+Keep editing
+Leave and discard
+support_agent
+Open a support ticket
+It will be filed as {{ supportNext }} and answered by an agent from your library.
+close
+What is it about
+{{ c.label }}
+Subject
+What happened
+{{ ticketNew.count }}
+Create ticket
+Cancel
+{{ ticketDetail.id }}
+{{ ticketDetail.statusIcon }} {{ ticketDetail.statusLabel }}
+{{ ticketDetail.subject }}
+close
+{{ m.k }}
+{{ m.v }}
+Conversation
+{{ m.initials }}
+{{ m.name }}
+{{ m.text }}
+{{ m.time }}
+{{ st.icon }}
+{{ ticketDetail.ratingValue }}
+{{ ticketDetail.ratingBy }}
+{{ ticketDetail.ratingReview }}
+How was the service?
+Your score is shared with the agent who handled the ticket.
+{{ st.icon }}
+{{ ticketDetail.starNote }}
+Send rating
+{{ ticketDetail.replyLabel }}
+Send reply
+person_add Assign to me
+task_alt Mark as resolved
+replay Reopen ticket
+Close
+{{ userDetail.initials }}
+{{ userDetail.name }}
+{{ userDetail.role }}
+{{ userDetail.statusIcon }} {{ userDetail.statusLabel }}
+{{ userDetail.selfNote }}
+close
+Account
+{{ r.k }}
+{{ r.v }}
+Activity
+{{ st.k }}
+{{ st.v }}
+mark_email_unread This account cannot sign in until the verification email is confirmed.
+shield_lock {{ userDetail.lockReason }}
+Resend verification
+Block user
+Restore access
+Restore account
+Delete account
+{{ userDetail.confirmTitle }}
+{{ userDetail.confirmBody }}
+Go back
+Working…
+{{ userDetail.confirmCta }}
+person_add
+Staff access
+Invite an administrator
+close
+They receive a verification email and only gain access once they confirm it. Until then they appear as Invited.
+Full name
+Work email
+Role
+{{ r.mark }}
+{{ r.label }}
+{{ r.note }}
+Libraries
+{{ invite.libSummary }}
+{{ l.mark }} {{ l.label }}
+Message in the invitation
+Cancel
+Review invitation
+Send this invitation?
+{{ invite.confirmBody }}
+Go back
+Sending…
+Yes, send invitation
+warning
+Leave without inviting?
+You are about to leave this form. No email will be sent and what you typed will be lost.
+Keep editing
+Leave and discard
+{{ bookAction.icon }}
+{{ bookAction.kicker }}
+{{ bookAction.heading }}
+{{ bookAction.bookTitle }} · {{ bookAction.bookAuthor }}
+close
+{{ bookAction.intro }}
+Cover
+image
+cloud_upload
+Drag an image here, or click to browse
+JPG, PNG or WebP up to 4 MB. Portrait 3:4 looks best — the image is cropped to fit each card.
+delete Remove image
+No image? Pick the colour shown instead.
+Title
+Author
+ISBN
+Genre
+{{ o }}
+Retail price (USD)
+Copies
+Library
+{{ o }}
+Plan tier
+{{ o }}
+What happened
+{{ o }}
+Expected back on shelf
+Condition notes
+Reason for removal
+{{ o }}
+Notes for the audit log
+Cancel
+{{ bookAction.submitLabel }}
+{{ bookAction.confirmTitle }}
+{{ bookAction.confirmBody }}
+Go back
+Working…
+{{ bookAction.confirmCta }}
+warning
+Leave without saving?
+You are about to leave this form. Everything you typed will be lost and nothing will change in the catalog.
+Keep editing
+Leave and discard
+{{ wiz.stepNo }}
+{{ wiz.heading }}
+close
+{{ st.n }}
+{{ st.label }}
+Cover
+image
+cloud_upload
+Drag an image here, or click to browse
+JPG, PNG or WebP up to 4 MB. Portrait 3:4 looks best — the image is cropped to fit each card.
+delete Remove image
+No image? Pick the colour shown instead.
+Title
+Author
+ISBN
+Genre
+{{ o }}
+Retail price (USD)
+Copies
+Library
+{{ o }}
+Plan tier
+{{ o }}
+Shelf note
+Publishing puts the copy in the catalog straight away. Saving as a draft keeps it out of members' search until you publish it.
+{{ r.k }}
+{{ r.v }}
+Back
+Save as draft
+Continue
+Publishing…
+Publish to catalog
+save
+Save as draft?
+You are leaving before publishing. Save what you have entered as a draft and pick it up later, or discard it and lose everything.
+Save as draft
+Discard changes
+Keep editing
+local_shipping
+{{ courier.kicker }}
+{{ courier.title }}
+{{ courier.author }} · due {{ courier.due }}
+close
+{{ courier.intro }} Return in progress and becomes Returned when the library checks the parcel in.
+{{ courier.codeLabel }}
+Demo: {{ courier.demoWho }} carrying code {{ courier.expected }} . Any other value is rejected.
+content_copy
+Confirming…
+{{ courier.confirmLabel }}
+Cancel
+Buy this book
+{{ buy.title }}
+{{ buy.author }} · {{ buy.genre }}
+close
+How do you want it?
+{{ buy.defaultNote }}
+{{ buy.pickMark }}
+Collect at library
+{{ buy.pickNote }} · free
+{{ buy.shipMark }}
+Ship to my address
+3–5 days · extra charge
+Payment method
+{{ m.mark }}
+{{ m.label }}
+{{ m.note }}
+Add a payment method
+Book
+{{ buy.price }}
+{{ buy.discountLabel }}
+{{ buy.discount }}
+Shipping
+{{ buy.feeLabel }}
+Total
+{{ buy.total }}
+Paying… Confirm purchase
+Cancel
+{{ snack.icon }}
+{{ snack.msg }}
+Dismiss
