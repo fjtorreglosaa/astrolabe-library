@@ -338,7 +338,13 @@ dispatches commands via `ISender` — per SDD+ §9.1 background job rules.
 | `BR-STR-008` | Points already earned survive a downgrade but may only be redeemed on the Max plan |
 
 **Acceptance.** A Max member spending $150 on books from another city receives a 15% discount and accrues
-$1.00 of redeemable balance.
+**$0.85** of redeemable balance.
+
+> Corrected 2026-08-16 (`GLOBAL-021`). This read $1.00, which is $150 ÷ $1.50 — the *pre*-discount
+> figure. `BR-STR-006` earns on the post-discount total: $150 less 15% is $127.50, and $127.50 ÷
+> $1.50 is 85 point-cents. Earning on the list price would pay the discount twice, crediting the
+> member for money they never spent and inflating the reward in proportion to how generous the plan
+> already is. The rule is normative; this example was an arithmetic slip.
 
 **Estimate.** 6 sessions. **Depends on:** Stage 4.
 
@@ -464,8 +470,12 @@ Arbitration rule confirmed by the product owner: **the prototype has the final w
 | C8 | UI framework | Rebuilt on MUI v6; the prototype is a visual reference, not reusable code |
 | C9 | Interface language | English, matching the prototype |
 
-**C6 — reward point redemption cap.** The prototype shows a balance but never implements redemption, so
-arbitration does not apply. Proposal: cap at 50% of the order total. **OPEN.**
+**C6 — reward point redemption cap. RESOLVED 2026-08-16 (`GLOBAL-009`).** The prototype shows a
+balance but never implements redemption, so arbitration did not apply and the rule was decided:
+points cover up to **50% of the book total after the plan discount**, excluding delivery, with a
+floor of 100 point-cents and one point-cent to the cent. They are a tender rather than a discount, so
+the order total is unchanged and the card is asked for the remainder. Reasoning in
+`store.business.md` §9.
 
 ### Methodology conflicts — new, requiring a decision
 
