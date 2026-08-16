@@ -67,6 +67,11 @@ A green test suite is not evidence that a feature works. Exercise the endpoint b
 done. Two Stage 2 defects passed every unit test and were found only with `curl`: a value converter
 that broke catalogue search, and a seeder projection that crashed the API at startup.
 
+- Verify the frontend with `npm run build`, never `tsc --noEmit` — the build script is
+  `tsc -b && vite build` and is stricter
+- A container reporting `healthy` is not evidence it runs your code: a failed `--build` leaves the
+  previous image serving. Confirm the image was replaced after a rebuild
+
 ## Persisting value objects
 
 - Map a value object as an **owned type** (class) or **complex type** (struct, such as `Money`),

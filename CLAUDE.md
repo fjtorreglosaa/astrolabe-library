@@ -198,8 +198,18 @@ Watch in particular:
 - anything that binds an **enumeration from a request body**
 - anything a **migration or seeder** touches, including the down-migration
 - any **date rendered to a member**, which must be checked in a zone other than the server's
+- the **frontend build**, with `npm run build` — not `tsc --noEmit`. The build script is
+  `tsc -b && vite build`, and project-reference mode applies stricter settings than a bare
+  `--noEmit`: a `noUncheckedIndexedAccess` error slipped through that way, the Docker build failed,
+  and `docker compose up -d` went on serving the previous image without a word
 
 When a defect is found this way, add the regression test that would have caught it, then fix it.
+
+**A container that reports `healthy` is not evidence that it runs your code.** `docker compose up -d
+--build` leaves the previous image in place when the build fails, and the old container passes its
+health check happily. After rebuilding a service, confirm the image was actually replaced — check
+`docker inspect <name> --format '{{.State.StartedAt}}'`, or grep the served asset for a string only
+the new code contains.
 
 ---
 

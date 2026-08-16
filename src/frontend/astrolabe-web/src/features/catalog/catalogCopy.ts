@@ -94,7 +94,10 @@ export const tintFor = (bookId: string): string => {
   // not all land on the same colour.
   const sum = [...bookId].reduce((total, character) => total + character.charCodeAt(0), 0);
 
-  return TINTS[sum % TINTS.length];
+  // The fallback is unreachable — a modulo of the length is always in range — but the project
+  // enables noUncheckedIndexedAccess, and a non-null assertion here would silence exactly the check
+  // that would catch a future off-by-one in this expression.
+  return TINTS[sum % TINTS.length] ?? TINTS[0];
 };
 
 /** Two initials, as the prototype draws a cover placeholder. */

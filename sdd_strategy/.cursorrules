@@ -239,6 +239,13 @@ This applies in particular to:
   - anything a migration or a seeder touches
   - any date rendered to a member, which must be checked in a zone other than the server's
 
+Verify the frontend with npm run build, never with tsc --noEmit. The build script is tsc -b && vite
+build, and project-reference mode applies stricter settings than a bare --noEmit.
+
+A container reporting healthy is not evidence that it runs your code: docker compose up -d --build
+keeps the previous image when the build fails, and the stale container stays healthy. After a
+rebuild, confirm the image was replaced.
+
 When a defect is found this way, add the regression test that would have caught it, then fix it.
 
 ## RULE 23 — PERSISTING VALUE OBJECTS
