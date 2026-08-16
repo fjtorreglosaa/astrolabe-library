@@ -66,8 +66,8 @@ public sealed class ReservationHandlerTests
         _locations.Setup(l => l.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, BookProjection.LibraryLocation>
             {
-                [Midtown] = new(Midtown, "Midtown", CityId, "New York"),
-                [Loop] = new(Loop, "Loop", OtherCity, "Chicago"),
+                [Midtown] = new(Midtown, "Midtown", CityId, "New York", IsActive: true),
+                [Loop] = new(Loop, "Loop", OtherCity, "Chicago", IsActive: true),
             });
 
         _scope = new Mock<ILibraryScopeProvider>();
@@ -130,6 +130,58 @@ public sealed class ReservationHandlerTests
         book.CopyAt(Midtown)!.AvailableCount.Should().Be(1);
         _reservations.Saved.Should().Be(1);
     }
+
+    [Test]
+    public async Task Confirming_AtAWithdrawnBranch_IsRefused()
+    {
+        // Regression, NET-025. Deactivating a library used to change nothing a member could feel:
+        // the branch stayed in the catalogue and a reservation against it succeeded. Verified
+        // against the running system before the fix — HTTP 200, reservation created.
+        var book = ABook(atMidtown: 2);
+        WithdrawMidtown();
+
+        var result = await ConfirmHandler().Handle(
+            new ConfirmReservationCommand(book.Id, Midtown, DeliveryMethod.Collection, null), Ct);
+
+        result.Error.Should().Be(ReservationErrors.LibraryInactive);
+        book.CopyAt(Midtown)!.AvailableCount.Should().Be(2, "no stock may move");
+        _reservations.Saved.Should().Be(0);
+    }
+
+    [Test]
+    public async Task Confirming_AtAWithdrawnBranch_IsRefusedEvenWhenTheStockIsThere()
+    {
+        // The refusal must be about the branch being closed, not about an empty shelf: a member sent
+        // to a locked door because we said "no copies here" would keep trying.
+        var book = ABook(atMidtown: 5);
+        WithdrawMidtown();
+
+        var result = await ConfirmHandler().Handle(
+            new ConfirmReservationCommand(book.Id, Midtown, DeliveryMethod.Collection, null), Ct);
+
+        result.Error.Should().NotBe(ReservationErrors.NoCopyAtLibrary);
+        result.Error.Should().Be(ReservationErrors.LibraryInactive);
+    }
+
+    [Test]
+    public async Task Confirming_AtAnOpenBranch_IsUnaffectedByAnotherBranchBeingWithdrawn()
+    {
+        var book = ABook(atMidtown: 2, atLoop: 1);
+        WithdrawMidtown();
+
+        var result = await ConfirmHandler().Handle(
+            new ConfirmReservationCommand(book.Id, Loop, DeliveryMethod.Collection, null), Ct);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    private void WithdrawMidtown() =>
+        _locations.Setup(l => l.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, BookProjection.LibraryLocation>
+            {
+                [Midtown] = new(Midtown, "Midtown", CityId, "New York", IsActive: false),
+                [Loop] = new(Loop, "Loop", OtherCity, "Chicago", IsActive: true),
+            });
 
     [Test]
     public async Task Confirming_WritesAnAuditEntryInTheSameCommit()
@@ -366,8 +418,4 @@ public sealed class ReservationHandlerTests
         reservation.DaysLateAtCheckIn.Should().Be(6);
     }
 
-    private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
-    {
-        public DateTimeOffset UtcNow => now;
-    }
 }

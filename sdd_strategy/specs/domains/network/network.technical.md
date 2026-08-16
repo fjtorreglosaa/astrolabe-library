@@ -1,7 +1,7 @@
 # Network — Technical Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
 **Version:** 1
 **Implements:** `BR-NET-001` to `BR-NET-017`
 
@@ -37,7 +37,7 @@ public sealed class Library : Entity
     public string Name { get; private set; }
     public bool IsActive { get; private set; }
 
-    public Result Deactivate(bool isCityHomeLibrary, bool hasOpenObligations);   // BR-NET-005
+    public Result Deactivate(bool isCityHomeLibrary);   // BR-NET-005
 }
 ```
 
@@ -127,7 +127,7 @@ null check at every call site.
 | `RevokeAdminCommand` | userId | `Result` | `BR-NET-012`, `-016` |
 | `AssignLibrariesCommand` | userId, libraryIds | `Result` | `BR-NET-006`, `-008`, `-009`, `-011` |
 | `CreateLibraryCommand` | cityId, name | `Result<Guid>` | `BR-NET-001`, `-002` |
-| `DeactivateLibraryCommand` | libraryId | `Result` | `BR-NET-005` |
+| `DeactivateLibraryCommand` | libraryId | `Result<LibraryObligations>` | `BR-NET-005` |
 | `DesignateHomeLibraryCommand` | cityId, libraryId | `Result` | `BR-NET-003` |
 
 ### Queries
@@ -201,6 +201,7 @@ never redeclared.
 
 | Decision | Choice | Rationale | Alternatives rejected |
 |---|---|---|---|
+| What blocks deactivating a library | Only being the city's home library. Copies, live loans and unpaid fines are reported | `BR-NET-005` lists those three as what blocks a *deletion* and offers deactivation as the alternative that preserves history, so refusing on them inverted it. It also could not converge — stock is permanent and new reservations keep arriving until the branch stops taking them, which is what deactivating does. The operator gets a count instead, and a warning log, because a branch withdrawn with work on it needs a human | Refusing on any obligation — rejected: unsatisfiable, so it left no way to wind a branch down. Refusing on live reservations only — rejected: same deadlock, since new ones keep arriving. A two-phase suspend-then-withdraw — rejected: invents product the prototype does not have |
 | Scope as a value object | `LibraryScope`, consumed by every other domain | Puts `BR-NET-006` in exactly one place. Five domains asking the database independently would give five chances to get it wrong | Each domain querying assignments itself — rejected: duplicated rule, guaranteed drift |
 | Empty scope representation | `LibraryScope.Empty()` as a real value | `BR-NET-010` says an unassigned administrator sees empty lists, not an error. A null scope would invite a null check at every call site, and one would be forgotten | Null or an exception — rejected: turns a valid state into an error path |
 | Scope cache lifetime | Per request, no longer | `BR-NET-011` demands the next request reflect a revocation. Any longer-lived cache contradicts the rule | Cached per session or in memory with TTL — rejected: would leave revoked administrators acting for the TTL |

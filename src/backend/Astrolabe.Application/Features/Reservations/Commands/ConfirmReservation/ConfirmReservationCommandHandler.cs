@@ -82,6 +82,15 @@ public sealed class ConfirmReservationCommandHandler(
         var locations = await libraries.GetAllAsync(cancellationToken);
         var location = locations.GetValueOrDefault(request.LibraryId);
 
+        // BR-NET-005. Checked here and not only in the catalogue projection: hiding a branch from
+        // the listing is presentation, and a member holding a stale page — or anyone posting the
+        // identifier directly — would otherwise still reserve from a library that has been
+        // withdrawn. This was reachable before NET-025 closed it.
+        if (location is { IsActive: false })
+        {
+            return Result.Failure<ReservationDto>(ReservationErrors.LibraryInactive);
+        }
+
         var verdict = CatalogAccessPolicy.EvaluateCopy(
             member, book.Tier,
             new CopyLocation(copy.LibraryId, location?.CityId ?? Guid.Empty, copy.AvailableCount));

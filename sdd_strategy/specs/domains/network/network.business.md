@@ -1,7 +1,7 @@
 # Network — Business Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
 **Version:** 1
 **Ring:** MVP
 
@@ -42,7 +42,7 @@ asks `network` that question rather than deciding for itself, so the rule exists
 | `BR-NET-002` | A library must have a name unique within its city |
 | `BR-NET-003` | A city must expose exactly one library as the **home library** for members residing in it |
 | `BR-NET-004` | A country offered at registration must have at least one city, and a city at least one library. A member must never be able to register into an empty network branch |
-| `BR-NET-005` | A library must not be deleted while it holds copies, active reservations, or unresolved fines. It may be **deactivated**, which hides it from members while preserving history |
+| `BR-NET-005` | A library must not be deleted while it holds copies, active reservations, or unresolved fines. It may be **deactivated**, which hides it from members while preserving history. Deactivation is refused only when the library is its city's home library (`BR-NET-003`); outstanding copies, loans and fines are **reported to the operator, never refused** — see the note below |
 
 ### Scope and authority
 
@@ -155,3 +155,39 @@ Totals: 6 countries, 18 cities, 35 libraries. Every city designates exactly one 
 `BR-NET-003` requires.
 
 Read `docs/design/prototype.source.js` for the exact copy and the administrator seed team.
+
+---
+
+## Note — where `BR-NET-005` bites, clarified 2026-08-16 (`NET-025`)
+
+The rule names two operations and only one of them is guarded by the obligations list.
+
+**Deletion is guarded, and does not exist.** No command, endpoint or screen deletes a library, and
+none is planned: the domain revokes rather than deletes everywhere else (`LibraryAssignment`,
+`BR-NET-011`), and destroying a branch would take its reservation and fine history with it. The
+first half of the rule is therefore satisfied by construction.
+
+**Deactivation is not guarded by obligations.** Until `NET-025` the code refused it whenever a
+branch held copies, live reservations or unpaid fines. That inverted the rule — which offers
+deactivation as the *alternative* that preserves history — and it could never converge:
+
+- copies are permanent stock and do not drain on their own;
+- new reservations keep arriving until the branch stops taking them, and stopping them **is** what
+  deactivating does.
+
+So the condition for withdrawing a library was one that continued operation regenerated. A guard
+that cannot be satisfied is not a safeguard, and it left an operator with no way to wind a branch
+down at all.
+
+What deactivation now does:
+
+| | |
+|---|---|
+| Refused when | The branch is its city's home library (`BR-NET-003`). Designating another unblocks it |
+| Reported | Copies on the shelves, live reservations, unresolved fines — returned to the caller and logged at warning level |
+| Members | The branch vanishes from the catalogue, its copies stop counting toward a book's availability, and reserving from it is refused with `reservations.library_inactive` |
+| Staff | Unchanged. Returns and fine payments run through staff paths, which do not consult the flag, so outstanding work stays serviceable |
+
+This was the larger half of the gap. Before `NET-025` a deactivated library was still listed to
+members and could still be reserved from — confirmed against the running system, where the
+reservation succeeded with HTTP 200.

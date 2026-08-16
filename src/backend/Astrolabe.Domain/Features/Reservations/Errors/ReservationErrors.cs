@@ -15,6 +15,15 @@ public static class ReservationErrors
         Error.Conflict("reservations.copy_just_taken",
             "Someone reserved the last copy a moment ago. Try another library.");
 
+    /// <summary>
+    /// BR-NET-005. The branch has been withdrawn, so it is no longer open to members. Distinct from
+    /// "no copy here": the copies may well exist, and telling a member the shelf is empty when the
+    /// branch is closed would send them to a door that is locked.
+    /// </summary>
+    public static readonly Error LibraryInactive =
+        Error.Conflict("reservations.library_inactive",
+            "That library is no longer open for reservations.");
+
     public static readonly Error NoCopyAtLibrary =
         Error.NotFound("reservations.no_copy_at_library",
             "That library does not hold a copy of this book.");

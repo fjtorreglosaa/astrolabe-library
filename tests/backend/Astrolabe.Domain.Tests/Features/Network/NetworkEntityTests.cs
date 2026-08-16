@@ -84,7 +84,7 @@ public sealed class NetworkEntityTests
     {
         var city = ACity();
         var library = ALibrary(city.Id);
-        library.Deactivate(isCityHomeLibrary: false, hasOpenObligations: false);
+        library.Deactivate(isCityHomeLibrary: false);
 
         var result = city.DesignateHomeLibrary(library);
 
@@ -104,8 +104,7 @@ public sealed class NetworkEntityTests
     {
         var library = ALibrary(Guid.NewGuid());
 
-        library.Deactivate(isCityHomeLibrary: false, hasOpenObligations: false)
-            .IsSuccess.Should().BeTrue();
+        library.Deactivate(isCityHomeLibrary: false).IsSuccess.Should().BeTrue();
         library.IsActive.Should().BeFalse();
     }
 
@@ -115,41 +114,46 @@ public sealed class NetworkEntityTests
         // Edge case: a city must always expose a home library, so another must be designated first.
         var library = ALibrary(Guid.NewGuid());
 
-        var result = library.Deactivate(isCityHomeLibrary: true, hasOpenObligations: false);
+        var result = library.Deactivate(isCityHomeLibrary: true);
 
         result.Error.Should().Be(NetworkErrors.CannotDeactivateHomeLibrary);
         library.IsActive.Should().BeTrue();
     }
 
     [Test]
-    public void Library_Deactivate_WithOpenObligations_IsBlocked()
+    public void Library_Deactivate_WithWorkStillOutstanding_IsAllowed()
     {
+        // The inverse of what this asserted until NET-025. BR-NET-005 lists copies, live loans and
+        // unpaid fines as what blocks a *deletion*, and offers deactivation as the alternative that
+        // preserves history — so refusing on them closed the escape hatch exactly when it was
+        // needed. It also could not converge: stock is permanent and new reservations keep arriving
+        // until the branch stops taking them, which is what deactivating is for.
         var library = ALibrary(Guid.NewGuid());
 
-        var result = library.Deactivate(isCityHomeLibrary: false, hasOpenObligations: true);
-
-        result.Error.Should().Be(NetworkErrors.LibraryHasOpenObligations);
-        library.IsActive.Should().BeTrue();
+        library.Deactivate(isCityHomeLibrary: false).IsSuccess.Should().BeTrue();
+        library.IsActive.Should().BeFalse();
     }
 
     [Test]
     public void Library_Deactivate_Twice_Fails()
     {
         var library = ALibrary(Guid.NewGuid());
-        library.Deactivate(false, false);
+        library.Deactivate(false);
 
-        library.Deactivate(false, false).Error.Should().Be(NetworkErrors.LibraryAlreadyInactive);
+        library.Deactivate(false).Error.Should().Be(NetworkErrors.LibraryAlreadyInactive);
     }
 
     [Test]
-    public void Library_HomeLibraryCheckTakesPrecedenceOverObligations()
+    public void Library_HomeLibraryIsTheOnlyThingThatBlocksDeactivation()
     {
-        // Both blockers present: the caller must be told to designate another home library, which is
-        // the action that actually unblocks them.
+        // Since NET-025 there is exactly one blocker left, and it is the one the caller can act on:
+        // designate another home library. Outstanding copies, loans and fines are reported by the
+        // handler and never refuse the withdrawal.
         var library = ALibrary(Guid.NewGuid());
 
-        library.Deactivate(isCityHomeLibrary: true, hasOpenObligations: true)
+        library.Deactivate(isCityHomeLibrary: true)
             .Error.Should().Be(NetworkErrors.CannotDeactivateHomeLibrary);
+        library.IsActive.Should().BeTrue();
     }
 
     // ---------- Assignments, BR-NET-009 and BR-NET-011 ----------

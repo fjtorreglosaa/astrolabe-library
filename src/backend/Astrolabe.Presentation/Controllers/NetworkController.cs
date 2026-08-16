@@ -146,7 +146,9 @@ public sealed class NetworkController(ISender sender) : ApiControllerBase(sender
     {
         var result = await Sender.Send(new DeactivateLibraryCommand(libraryId), cancellationToken);
 
-        return result.IsSuccess ? NoContent() : HandleFailure(result);
+        // 200 with the report rather than 204: what the branch still held when it was withdrawn is
+        // the operator's next piece of work, and a no-content response would throw it away.
+        return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
     }
 
     [HttpPut("cities/{cityId:guid}/home-library")]

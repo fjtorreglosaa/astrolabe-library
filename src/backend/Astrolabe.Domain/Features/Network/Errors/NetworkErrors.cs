@@ -76,10 +76,6 @@ public static class NetworkErrors
         Error.Conflict("network.cannot_deactivate_home_library",
             "Designate another home library for this city first.");
 
-    public static readonly Error LibraryHasOpenObligations =
-        Error.Conflict("network.library_has_open_obligations",
-            "This library still holds copies, active reservations or unresolved fines.");
-
     public static readonly Error LibraryAlreadyInactive =
         Error.Conflict("network.library_already_inactive", "This library is already inactive.");
 

@@ -11,6 +11,8 @@ using Astrolabe.Domain.Features.Network.Repositories;
 using Astrolabe.Application.Tests.TestSupport;
 using FluentAssertions;
 using Moq;
+using Astrolabe.Application.Contracts.Network;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Astrolabe.Application.Tests.Features.Network;
 
@@ -38,8 +40,8 @@ public sealed class LibraryCommandHandlerTests
         _obligations = new Mock<ILibraryObligationsProbe>();
 
         SignInAs(UserRole.SuperAdmin);
-        _obligations.Setup(o => o.HasOpenObligationsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _obligations.Setup(o => o.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(LibraryObligations.None);
     }
 
     private void SignInAs(UserRole role) => _currentUser.SetupGet(u => u.Role).Returns(role);
@@ -54,7 +56,8 @@ public sealed class LibraryCommandHandlerTests
         new(_network.Object, _currentUser.Object);
 
     private DeactivateLibraryCommandHandler DeactivateHandler() =>
-        new(_network.Object, _obligations.Object, _currentUser.Object);
+        new(_network.Object, _obligations.Object, _currentUser.Object,
+            NullLogger<DeactivateLibraryCommandHandler>.Instance);
 
     private DesignateHomeLibraryCommandHandler DesignateHandler() =>
         new(_network.Object, _currentUser.Object);
@@ -209,19 +212,24 @@ public sealed class LibraryCommandHandlerTests
     }
 
     [Test]
-    public async Task DeactivateLibrary_WithOpenObligations_IsBlocked()
+    public async Task DeactivateLibrary_WithWorkStillOutstanding_SucceedsAndReportsIt()
     {
+        // NET-025 inverted this. What the branch still holds is the operator's next piece of work,
+        // not a reason to refuse — and a refusal here could never be satisfied, because stock does
+        // not disappear and new loans keep arriving until the branch is withdrawn.
         var city = ACity();
         var library = ALibrary(city.Id);
         _libraries.Setup(l => l.GetByIdAsync(library.Id, It.IsAny<CancellationToken>())).ReturnsAsync(library);
         _cities.Setup(c => c.GetByIdAsync(city.Id, It.IsAny<CancellationToken>())).ReturnsAsync(city);
-        _obligations.Setup(o => o.HasOpenObligationsAsync(library.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _obligations.Setup(o => o.GetAsync(library.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new LibraryObligations(Copies: 12, ActiveReservations: 3, UnresolvedFines: 1));
 
         var result = await DeactivateHandler().Handle(new DeactivateLibraryCommand(library.Id), Ct);
 
-        result.Error.Should().Be(NetworkErrors.LibraryHasOpenObligations);
-        library.IsActive.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
+        library.IsActive.Should().BeFalse();
+        result.Value.Should().Be(new LibraryObligations(12, 3, 1));
+        result.Value.HasAny.Should().BeTrue();
     }
 
     [Test]
@@ -236,6 +244,7 @@ public sealed class LibraryCommandHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         library.IsActive.Should().BeFalse();
+        result.Value.HasAny.Should().BeFalse();
         _network.Saved.Should().Be(1);
     }
 
@@ -274,7 +283,7 @@ public sealed class LibraryCommandHandlerTests
     {
         var city = ACity();
         var library = ALibrary(city.Id);
-        library.Deactivate(isCityHomeLibrary: false, hasOpenObligations: false);
+        library.Deactivate(isCityHomeLibrary: false);
         _cities.Setup(c => c.GetByIdAsync(city.Id, It.IsAny<CancellationToken>())).ReturnsAsync(city);
         _libraries.Setup(l => l.GetByIdAsync(library.Id, It.IsAny<CancellationToken>())).ReturnsAsync(library);
 
