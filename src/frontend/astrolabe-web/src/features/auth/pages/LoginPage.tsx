@@ -6,10 +6,12 @@ import {
   Checkbox,
   Chip,
   FormControlLabel,
+  IconButton,
   Link,
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +20,7 @@ import { useForm } from 'react-hook-form';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { toProblemDetails } from '../../../shared/api/httpClient';
+import { rem, typeScale } from '../../../theme/tokens';
 import { useAuth } from '../components/AuthProvider';
 
 /**
@@ -56,6 +59,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [failure, setFailure] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const {
     register,
@@ -145,7 +149,7 @@ export const LoginPage = () => {
 
         <Box sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary" component="p" sx={{ pt: 2, pb: 1 }}>
-            Demo accounts — password <code>{DEMO_PASSWORD}</code> for all three:
+            Demo accounts — click one to fill both fields:
           </Typography>
 
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
@@ -164,6 +168,43 @@ export const LoginPage = () => {
                 }}
               />
             ))}
+          </Stack>
+
+          {/*
+            The password sits alone in its own element, with nothing around it inside the selectable
+            region. It used to read "password Testing1234* for all three" on one line, and selecting
+            it copied the word "password" into the field — a wrong password that looks like a broken
+            account. The API is right to reject it, so the fix belongs here.
+          */}
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', pt: 1.5 }}>
+            <Typography variant="caption" color="text.secondary">
+              Password for all three:
+            </Typography>
+            <Box
+              component="code"
+              sx={{
+                px: 0.75,
+                py: 0.25,
+                borderRadius: 1,
+                bgcolor: 'action.hover',
+                fontSize: rem(typeScale.micro),
+              }}
+            >
+              {DEMO_PASSWORD}
+            </Box>
+            <Tooltip title={copied ? 'Copied' : 'Copy password'}>
+              <IconButton
+                size="small"
+                aria-label="Copy the demo password"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(DEMO_PASSWORD);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                <MaterialSymbol name={copied ? 'check' : 'content_copy'} size={16} />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </Box>
       </Stack>
