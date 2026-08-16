@@ -318,8 +318,12 @@ aggregate root, not before.
 | 3 | `reservations` | ✅ Done — 20/20 |
 | 4 | `billing` | ✅ Done — 22/22 |
 | 5 | `store` | ✅ Done — 17/17 |
-| 6–9 | — | Not started |
+| 6 | Administration surfaces | ✅ Done — user directory, book management, libraries and admins |
+| 7–9 | — | Not started |
 
 Open decisions awaiting the user:
 
-- `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients.
+- `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients. Needs an account
+  change on your side, not a decision.
+- `GLOBAL-022` — the three create endpoints answer three different body shapes. Raised during
+  Stage 6, after it produced a defect in the new client.

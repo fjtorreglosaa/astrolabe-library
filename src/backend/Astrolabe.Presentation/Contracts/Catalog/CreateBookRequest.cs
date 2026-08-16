@@ -16,4 +16,3 @@ public sealed record CreateBookRequest(
     IReadOnlyList<CopyAllocationRequest> Copies);
 
 /// <summary>How many volumes one library receives.</summary>
-public sealed record CopyAllocationRequest(Guid LibraryId, int Quantity);

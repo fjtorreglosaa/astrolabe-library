@@ -1,7 +1,7 @@
 # Catalog — Tasks
 
 **Last reviewed:** 2026-08-16
-**Overall progress:** 22/22 (100%)
+**Overall progress:** 24/24 (100%)
 
 > **Growth threshold breached** at 31 business rules. `GLOBAL-018` proposes a `catalog` / `reviews`
 > split and recommends deferring it until Stage 6.
@@ -43,6 +43,9 @@
 | `CAT-021` | `catalog` screen: card and table views, filters, paging, plan-lock badges | ✅ | `CAT-020` | `CatalogPage`, `BookCard`, `BookTable` | Copy from the prototype |
 | `CAT-022` | Book detail panel with availability per branch | ✅ | `CAT-021` | `BookDetailDialog` | |
 
+| `CAT-023` | `admin-books` screen with the three-step wizard | ✅ | `CAT-022` | `AdminBooksPage.tsx`, `BookWizardDialog.tsx` | PLAN-001 Stage 6. Details → Copies & pricing → Review, transcribed from the prototype's `WIZ_STEPS` |
+| `CAT-024` | Lifecycle actions with typed reasons | ✅ | `CAT-023` | `BookLifecycleDialog.tsx` | Repair and removal take a reason from a closed set, never free text — `BR-CAT-025` |
+
 ### Status values
 
 ⬜ Not started · 🔄 In progress · ✅ Done · ❌ Removed · 🔴 Blocked
@@ -71,6 +74,7 @@
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | `CAT-023`, `CAT-024` | AI Agent — Claude | **PLAN-001 Stage 6 — book management.** The nine commands and their endpoints already existed; this is the surface. A book is created as a **draft** and published as a separate act, which is the prototype's own shape and the reason the wizard has a Review step. Repair and removal take a typed reason, because a trail is only answerable later if the reasons are a closed set. Verified against the running system across the whole lifecycle — draft, publish, repair, return, remove, restore — checking at each step that a member sees the book exactly when they should, and that every transition wrote its audit entry |
 | 2026-08-15 | `CAT-001` to `CAT-008` | AI Agent — Claude | Domain model and lifecycle. `CatalogAccessPolicy` covered by the full access matrix, 23 tests |
 | 2026-08-15 | `CAT-009` to `CAT-014` | AI Agent — Claude | Persistence and the 12-book seed. Down-migration reverted and reapplied against the running database on 2026-08-16 |
 | 2026-08-15 | `CAT-015` to `CAT-022` | AI Agent — Claude | Queries, commands, controllers and both member screens |

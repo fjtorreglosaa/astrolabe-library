@@ -1,7 +1,7 @@
 # Network — Tasks
 
 **Last reviewed:** 2026-08-16
-**Overall progress:** 24/25 (96%)
+**Overall progress:** 25/25 (100%)
 
 Built before `identity` where the two overlap: registration validates a country and city, so the
 geography must exist first.
@@ -45,7 +45,7 @@ geography must exist first.
 | `NET-021` | `GetRegistrationCountriesQuery` and `GetCitiesByCountryQuery` | ✅ | — | — | Derived from active libraries, not from a flag |
 | `NET-022` | `GetLibrariesQuery`, `GetAdminTeamQuery`, `GetMyScopeQuery` | ✅ | `IDN-003` | — | Scope-filtered. `GetAdminTeamQuery` needs the `User` aggregate |
 | `NET-023` | `LibraryScopeAuthorizationHandler`, centralised | ✅ | `NET-014` | — | `GUIDELINES.md` §21 |
-| `NET-024` | `admin-libraries` screen | ⬜ | `NET-022` | — | Super administrator only |
+| `NET-024` | `admin-libraries` screen | ✅ | `NET-022` | `AdminLibrariesPage.tsx`, `InviteAdminDialog.tsx` | Done 2026-08-16. Libraries with their home-library and withdrawn states, plus the administrator team with invitation, library assignment and revocation. Withdrawing reports what the branch still held rather than refusing — `BR-NET-005` |
 | `NET-025` | Real library obligations probe, and honour deactivation on member-facing surfaces | ✅ | — | `LibraryObligationsProbe` | Done 2026-08-16. Real counts across `catalog`, `reservations` and `billing`. Found a larger gap in the same rule: deactivation was refused on obligations (inverting `BR-NET-005`, and unsatisfiable), while nothing hid a withdrawn branch from members — a reservation against a deactivated library succeeded against the running system. Both fixed; 9 regression tests |
 
 ### Status values
@@ -82,6 +82,7 @@ Every `BR-NET-*` rule needs at least one test. These are the ones that carry the
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | `NET-024` | AI Agent — Claude | **PLAN-001 Stage 6 — libraries and admins.** Super administrator only. The withdrawal confirmation states what survives the act, and the result reports what the branch was still holding, because that report is the operator's next piece of work and nothing else chases it. An administrator with no assignments is shown as such rather than as an empty cell — `BR-NET-010` describes a real state, not a fault |
 | 2026-08-16 | `NET-025` | AI Agent — Claude | **`BR-NET-005` closed, and corrected.** The probe now counts copies, live reservations and unresolved fines for real, and *reports* them instead of refusing — the old refusal inverted the rule and could never be satisfied, since stock is permanent and new loans arrive until the branch is withdrawn. The larger half was unbuilt: nothing hid a deactivated branch, so it stayed in the catalogue and a reservation against it returned HTTP 200. `BookProjection` now drops copies at withdrawn branches and `ConfirmReservationCommandHandler` refuses with `reservations.library_inactive`. 9 tests, the reservation ones verified in red |
 | 2026-08-15 | — | AI Agent — Claude | **Architecture review, `GLOBAL-016` and `GLOBAL-017`.** `network` moved under `Features/` in all three layers; handlers now depend on `INetworkUnitOfWork` instead of individual repositories. No business rule changed; 265 tests green throughout |
 | 2026-08-15 | `NET-001` | AI Agent — Claude | `Country`, `City`, `Library` with factory validation and `NetworkErrors` as typed, reusable errors |
