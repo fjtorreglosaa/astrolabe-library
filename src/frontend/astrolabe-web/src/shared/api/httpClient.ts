@@ -1,4 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { API_BASE_URL } from './apiBaseUrl';
 
 /**
  * The single Axios instance for the application. HTTP concerns live here, never scattered through
@@ -9,8 +10,6 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
  * `withCredentials` is on.
  */
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5080';
-
 let accessToken: string | null = null;
 
 export const setAccessToken = (token: string | null): void => {
@@ -20,7 +19,7 @@ export const setAccessToken = (token: string | null): void => {
 export const getAccessToken = (): string | null => accessToken;
 
 export const httpClient = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -52,15 +51,37 @@ const refreshAccessToken = async (): Promise<string> => {
   return refreshInFlight;
 };
 
+/**
+ * Endpoints that *establish* a session rather than consume one.
+ *
+ * A 401 from any of these means the credentials were wrong — never that an access token expired — so
+ * refreshing and retrying is not just wasteful, it is wrong. Left unlisted, a failed sign-in while
+ * an earlier session's cookie is still valid would refresh successfully and leave the application
+ * holding a working token for the **previous** user, with the sign-in form showing an error. That is
+ * how a "wrong password" turns into signing in as somebody else.
+ */
+const CREDENTIAL_ENDPOINTS = [
+  '/auth/sign-in',
+  '/auth/refresh',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+  '/auth/accept-invitation',
+] as const;
+
+const establishesCredentials = (url: string | undefined): boolean =>
+  CREDENTIAL_ENDPOINTS.some((endpoint) => url?.includes(endpoint) ?? false);
+
 httpClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const request = error.config as InternalAxiosRequestConfig & { _retried?: boolean };
 
     const isUnauthorized = error.response?.status === 401;
-    const isRefreshCall = request?.url?.includes('/auth/refresh') ?? false;
 
-    if (!isUnauthorized || isRefreshCall || request?._retried) {
+    if (!isUnauthorized || establishesCredentials(request?.url) || request?._retried) {
       return Promise.reject(error);
     }
 

@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   FormControlLabel,
   Link,
   Paper,
@@ -18,6 +19,22 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { toProblemDetails } from '../../../shared/api/httpClient';
 import { useAuth } from '../components/AuthProvider';
+
+/**
+ * The three seeded accounts, with the shared password from the prototype's own sign-in screen.
+ *
+ * Clickable rather than merely printed. The prototype lists them as text, and the wording below is
+ * unchanged — but typing them by hand invites the browser's password manager to fill a saved
+ * credential for a different account, which reads as "this account is broken" rather than as a
+ * mistyped password.
+ */
+const DEMO_ACCOUNTS = [
+  { email: 'fjtorreglosaa@gmail.com', role: 'member' },
+  { email: 'admin@astrolabe.co', role: 'admin' },
+  { email: 'super@astrolabe.co', role: 'super admin' },
+] as const;
+
+const DEMO_PASSWORD = 'Testing1234*';
 
 const schema = z.object({
   email: z.string().min(1, 'Enter your email address.').email('Enter a valid email address.'),
@@ -43,6 +60,7 @@ export const LoginPage = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -126,12 +144,27 @@ export const LoginPage = () => {
         </Typography>
 
         <Box sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
-          <Typography variant="caption" color="text.secondary" component="p" sx={{ pt: 2 }}>
-            Demo accounts — password <code>Testing1234*</code> for all three:
+          <Typography variant="caption" color="text.secondary" component="p" sx={{ pt: 2, pb: 1 }}>
+            Demo accounts — password <code>{DEMO_PASSWORD}</code> for all three:
           </Typography>
-          <Typography variant="caption" color="text.secondary" component="p">
-            fjtorreglosaa@gmail.com member · admin@astrolabe.co admin · super@astrolabe.co super admin.
-          </Typography>
+
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+            {DEMO_ACCOUNTS.map((account) => (
+              <Chip
+                key={account.email}
+                size="small"
+                variant="outlined"
+                label={`${account.email} ${account.role}`}
+                onClick={() => {
+                  // Both fields are set together, and the error is cleared: filling one and leaving
+                  // a stale password behind is the exact failure this is here to prevent.
+                  setFailure(null);
+                  setValue('email', account.email, { shouldValidate: true });
+                  setValue('password', DEMO_PASSWORD, { shouldValidate: true });
+                }}
+              />
+            ))}
+          </Stack>
         </Box>
       </Stack>
     </Paper>

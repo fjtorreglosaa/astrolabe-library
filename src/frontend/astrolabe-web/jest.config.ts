@@ -9,6 +9,9 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy',
+    // Vite replaces import.meta.env at build time; Jest cannot parse it at all. The stub keeps the
+    // HTTP client itself testable rather than excluding it from the suite.
+    'apiBaseUrl$': '<rootDir>/src/shared/api/apiBaseUrl.testing.ts',
   },
   transform: {
     '^.+\\.(t|j)sx?$': [
@@ -25,6 +28,7 @@ const config: Config = {
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/main.tsx',
+    '!src/shared/api/apiBaseUrl*.ts',
     '!src/**/*.d.ts',
   ],
   coverageThreshold: {
