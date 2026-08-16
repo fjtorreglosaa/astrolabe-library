@@ -319,9 +319,16 @@ aggregate root, not before.
 | 4 | `billing` | ✅ Done — 22/22 |
 | 5 | `store` | ✅ Done — 17/17 |
 | 6 | Administration surfaces | ✅ Done — user directory, book management, libraries and admins |
-| 7–9 | — | Not started |
+| 7 | `recommendations` | 🔄 Specifications authored, 0/18 built |
+| 8–9 | — | Not started |
 
 Open decisions awaiting the user:
 
 - `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients. Needs an account
   change on your side, not a decision.
+- `GLOBAL-023` — the recommendation rate limit (`BR-REC-011`) names no figure. Proposed: one
+  regeneration per member per hour.
+- `BLOCK-007` — no provider credential is available to exercise `BR-REC-008` against a real
+  vendor. Every test mocks it; this only blocks a live check.
+- The **match percentage** on a recommendation has no stated derivation in the prototype. Recorded
+  as model-supplied display copy rather than a computed score — see `recommendations.business.md` §8.
