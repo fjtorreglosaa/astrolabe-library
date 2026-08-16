@@ -41,7 +41,7 @@ belonging to a single domain live in that domain's `tasks.md`.
 | `GLOBAL-014` | Replace the email system with Mailgun | ✅ | — | — | Done 2026-08-15. `IEmailSender` in Application, `MailgunEmailSender` in Infrastructure via RestSharp. Mailpit removed from compose. Verified with a real send: HTTP 200, queued |
 | `GLOBAL-011` | Design the *Devices and sessions* screen | ⬜ | `BLOCK-004` | — | Not in the prototype. Must follow its visual language |
 | `GLOBAL-012` | Full Freshness Protocol sweep before MVP acceptance | ⬜ | — | — | `PLAN-001` Stage 8 |
-| `GLOBAL-018` | **Evaluate domain split: `catalog`** | 🔄 | — | — | Threshold exceeded: **31 business rules**, limit is 20 (SDD+ §6.2). Proposal below. **Awaiting written approval — reply "split now" or "defer".** Recommendation: defer to before Stage 6. Stage 2 shipped undivided; the split is a file move plus two spec files, and doing it now would rewrite specs that were just verified against the running system |
+| `GLOBAL-018` | **Evaluate domain split: `catalog`** | ✅ | — | `catalog` kept whole | **Resolved 2026-08-16: kept undivided, as a documented exception to SDD+ §6.2.** The threshold is a smell detector and here it reports a false positive — see the reasoning below. Revisit if the rule count passes 35 or a second aggregate root appears |
 | `GLOBAL-020` | Promote audit to its own bounded context | ✅ | — | `Domain/Features/Audit/`, `IAuditUnitOfWork` | Done 2026-08-16. `AuditEntry` and `IAuditRepository` moved out of `identity`. Five `network` handlers no longer reach into `IIdentityUnitOfWork` for one row; `catalog` can write BR-CAT-025 entries without knowing identity exists. Rule 24 |
 | `GLOBAL-019` | **Decide whether plan tiers stay inside `UserRole`** | ⬜ | — | — | Raised 2026-08-15 during Stage 2. `Subscription.Plan` is now the authority and `User.Role` mirrors it via an event handler, so one fact has two representations. Nothing authorises on the plan portion of the role, so this is debt rather than a defect. Removing the tiers would rewrite token claims, policies, seeds and the frontend — worth doing before `store` reads entitlements, not during Stage 2 |
 | `GLOBAL-016` | Adopt `Features/` in all three layers, plus RULE 17 and RULE 20 | ✅ | — | — | Done 2026-08-15. Domain, Application and Infrastructure now share one shape. A feature holds only Commands, Queries and Events |
@@ -69,7 +69,7 @@ approval.**
 | Domain | Trigger | Proposed split | Status |
 |---|---|---|---|
 | `identity` | **33 business rules — exceeds the limit of 20** | `identity` / `sessions` | **BREACHED — split DEFERRED by approval 2026-08-15. Revisit after Stage 1** |
-| `catalog` | **31 business rules — exceeds the limit of 20** | `catalog` / `reviews` | **BREACHED 2026-08-15 — `GLOBAL-018` raised.** Recommendation recorded 2026-08-16: keep undivided, the threshold is a false positive here. Awaiting the user's word |
+| `catalog` | 31 business rules — over the limit of 20 | `catalog` / `reviews` | **Documented exception, approved 2026-08-16 (`GLOBAL-018`).** Revisit at 35 rules or a second aggregate root |
 | `billing` | More than 15 commands and queries combined | `fines` / `payments` | Watching |
 
 ### `GLOBAL-015` — proposed split of `identity`
@@ -152,11 +152,40 @@ What genuinely deserves watching is a different boundary. `catalog` currently ow
 search, moderation, a holds queue — the seam to cut is **discovery** versus **collection**, not
 books versus reviews.
 
-**Proposed resolution.** Record `catalog` as a deliberate, documented exception to SDD+ §6.2, revisit
-if the rule count passes 35 or a second aggregate root appears, and close `GLOBAL-018`.
+### Resolution, approved 2026-08-16
 
-**Awaiting written approval.** Reply "keep undivided" to adopt this, or "split now" to proceed with
-the original `catalog` / `reviews` split.
+`catalog` stays whole, as a **deliberate and documented exception** to SDD+ §6.2.
+
+A threshold in a methodology is a prompt to look, not a verdict. Having looked, splitting here would
+trade a real cost for a rule's satisfaction:
+
+| | Keeping it whole | Splitting |
+|---|---|---|
+| `Book.AverageRating` | A stored column, maintained by an in-process event | A cross-context projection with an eventual-consistency window on the busiest read in the product |
+| The `reviews` context | — | Five rules, one entity, three operations, whose whole job is to hand a number back |
+| Spec files | 3 | 6, two of them describing almost nothing |
+| What a reader must hold | One domain | Two, plus the contract between them |
+
+**The revisit triggers**, recorded so this is a decision and not an omission:
+
+1. The rule count passes **35**.
+2. A **second aggregate root** appears that is not `Book`, `BookCopy` or `Review`.
+3. Reviews grow a lifecycle of their own — moderation, reporting, appeals — at which point they have
+   their own reasons to change and earn their own boundary.
+
+**And the boundary worth watching is a different one.** `catalog` owns *what exists*, *where it is*,
+*who may borrow it* and *what people thought of it*. The seam under real pressure is **discovery**
+versus **collection** — full-text search, ranking and recommendation on one side; books, copies and
+lifecycle on the other. If this domain is ever split, that is where the cut belongs, and splitting
+books from reviews first would make that cut harder rather than easier.
+
+**On the count itself.** Roughly seven of the thirty-one are granularity rather than scope:
+`BR-CAT-011` to `BR-CAT-015` are five rules stating the wording of one decision, and `BR-CAT-030`
+and `BR-CAT-031` are one rule about a rating written twice. Consolidated they would read as about
+24 — still over 20, and nowhere near two domains in a trenchcoat. **They are deliberately not
+renumbered:** every rule identifier is cited in code comments, tests and task files, and renumbering
+a stable catalogue to flatter a count would be churn with negative value. The identifiers are an
+API.
 
 ---
 

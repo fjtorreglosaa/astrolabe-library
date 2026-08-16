@@ -279,7 +279,9 @@ Pushing is a separate action and needs its own approval.
 - **No plan execution** without explicit written approval, per SDD+ §13.2 step 3. Implicit approval is
   not accepted.
 
-Domains currently under growth watch: `catalog`, `billing`, `identity`.
+Domains currently under growth watch: `billing`, `identity`. `catalog` breached the rule limit and is
+a **documented exception approved 2026-08-16** (`GLOBAL-018`) — revisit at 35 rules or a second
+aggregate root, not before.
 
 ## Current state
 
@@ -297,8 +299,6 @@ Domains currently under growth watch: `catalog`, `billing`, `identity`.
 
 Open decisions awaiting the user:
 
-- `GLOBAL-018` — split `catalog` into `catalog` / `reviews`? It carries 31 business rules against a
-  limit of 20. Recommendation: defer to before Stage 6.
 - `GLOBAL-019` — remove the plan tiers from `UserRole`? `Subscription.Plan` is the authority and the
   role now mirrors it, so one fact has two representations.
 - `BLOCK-004` — the Devices and sessions screen has no approved design.
