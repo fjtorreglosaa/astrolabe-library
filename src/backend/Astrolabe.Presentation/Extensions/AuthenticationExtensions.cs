@@ -1,4 +1,5 @@
 using System.Text;
+using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Infrastructure.Features.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -38,24 +39,19 @@ public static class AuthenticationExtensions
 
         services.AddAuthorization(options =>
         {
+            // nameof, not literals. These strings must match what JwtTokenGenerator writes into
+            // the role claim, and GLOBAL-019 renamed the enum underneath three literals that would
+            // have compiled perfectly and locked every member out at run time.
             options.AddPolicy(Policies.MemberOnly, policy =>
-                policy.RequireRole("Basic", "Plus", "Max"));
+                policy.RequireRole(nameof(UserRole.Member)));
 
             options.AddPolicy(Policies.StaffOnly, policy =>
-                policy.RequireRole("Admin", "SuperAdmin"));
+                policy.RequireRole(nameof(UserRole.Admin), nameof(UserRole.SuperAdmin)));
 
             options.AddPolicy(Policies.SuperAdminOnly, policy =>
-                policy.RequireRole("SuperAdmin"));
+                policy.RequireRole(nameof(UserRole.SuperAdmin)));
         });
 
         return services;
     }
-}
-
-/// <summary>Authorization policy names, declared once so no controller invents a string.</summary>
-public static class Policies
-{
-    public const string MemberOnly = "MemberOnly";
-    public const string StaffOnly = "StaffOnly";
-    public const string SuperAdminOnly = "SuperAdminOnly";
 }

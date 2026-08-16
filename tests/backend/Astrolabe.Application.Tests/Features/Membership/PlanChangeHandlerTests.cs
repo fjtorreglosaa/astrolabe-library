@@ -37,7 +37,7 @@ public sealed class PlanChangeHandlerTests
         _membership = new MembershipUnitOfWorkMock();
         _currentUser = new Mock<ICurrentUser>();
         _currentUser.SetupGet(u => u.UserId).Returns(MemberId);
-        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Plus);
+        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Member);
     }
 
     private void TheMemberIsOn(PlanTier plan, DateTimeOffset? startedAt = null)

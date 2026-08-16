@@ -1,7 +1,7 @@
 # Identity — Business Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
 **Version:** 1
 **Ring:** MVP
 
@@ -36,7 +36,7 @@ in its own terms.
 | **Reuse** | Presentation of a refresh token that has already been rotated. Treated as evidence of theft |
 | **Verification token** | A single-use secret emailed to confirm ownership of an email address |
 | **Recovery token** | A single-use secret emailed to allow a password reset |
-| **Role** | `Basic`, `Plus`, `Max`, `Admin`, or `Super Admin`. For members the role *is* their plan |
+| **Role** | `Member`, `Admin`, or `Super Admin`. What a user may **do**. It carries no plan: what a member bought lives on their subscription, and `identity` does not read it |
 | **Invitation** | How a staff account is created. The account exists as `Invited` until the recipient confirms |
 
 > In `recommendations`, *agent* means a prompt template; in `support`, a staff member. Neither meaning

@@ -10,6 +10,7 @@ using Astrolabe.Application.Features.Identity.Commands.SignOut;
 using Astrolabe.Application.Features.Identity.Commands.VerifyEmail;
 using Astrolabe.Application.Features.Identity.Queries.GetCurrentUser;
 using Astrolabe.Domain.Features.Identity.Enums;
+using Astrolabe.Presentation.Contracts.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -192,19 +193,3 @@ public sealed class AuthController(ISender sender) : ApiControllerBase(sender)
 
     private string? ClientIpAddress() => HttpContext.Connection.RemoteIpAddress?.ToString();
 }
-
-public sealed record RegisterRequest(
-    string Email, string Password, string FullName, Guid CountryId, Guid CityId, UserRole Plan);
-
-public sealed record SignInRequest(string Email, string Password, string? DeviceId);
-
-public sealed record TokenRequest(string Token);
-
-public sealed record EmailRequest(string Email);
-
-public sealed record ResetPasswordRequest(string Token, string NewPassword);
-
-public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
-
-/// <summary>Carries only the access token. The refresh token travels in a cookie.</summary>
-public sealed record AccessTokenResponse(string AccessToken, DateTimeOffset ExpiresAt);

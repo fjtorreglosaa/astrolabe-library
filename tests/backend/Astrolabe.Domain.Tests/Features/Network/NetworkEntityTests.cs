@@ -216,13 +216,11 @@ public sealed class NetworkEntityTests
         invitation.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<AdminInvited>();
     }
 
-    [TestCase(UserRole.Basic)]
-    [TestCase(UserRole.Plus)]
-    [TestCase(UserRole.Max)]
-    public void Invitation_Create_WithAMemberRole_Fails(UserRole role)
+    [Test]
+    public void Invitation_Create_WithAMemberRole_Fails()
     {
         AdminInvitation.Create(
-            Guid.NewGuid(), Guid.NewGuid(), role, [Guid.NewGuid()],
+            Guid.NewGuid(), Guid.NewGuid(), UserRole.Member, [Guid.NewGuid()],
             [1], Guid.NewGuid(), Now, TimeSpan.FromDays(7))
             .Error.Should().Be(NetworkErrors.InvitationRoleInvalid);
     }

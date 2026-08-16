@@ -1,6 +1,6 @@
 # Identity — Tasks
 
-**Last reviewed:** 2026-08-15
+**Last reviewed:** 2026-08-16
 **Overall progress:** 42/42 (100%)
 
 Built after `network`, because registration validates a country and city that must already exist.
@@ -126,6 +126,7 @@ Every `BR-IDN-*` rule needs at least one test. These carry the most risk:
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | `GLOBAL-019` | AI Agent — Claude | **Plan tiers removed from `UserRole`.** The enum is now `Member`/`Admin`/`SuperAdmin` and says nothing about what a member bought. `User.Register` takes a `PlanTier` and always produces a member, so registering directly into staff authority no longer type-checks; `User.ChangePlan` deleted; `UserRegistered` carries the chosen plan. Policies bind with `nameof` rather than string literals. Auth request records moved out of `AuthController.cs` into `Contracts/Identity/`, and `Policies` out of `AuthenticationExtensions.cs` — one public type per file |
 | 2026-08-15 | — | AI Agent — Claude | **Architecture review, `GLOBAL-016` and `GLOBAL-017`.** `identity` moved under `Features/` in all three layers; handlers now depend on `IIdentityUnitOfWork` instead of individual repositories. No business rule changed; 265 tests green throughout |
 | 2026-08-15 | `IDN-001` | AI Agent — Claude | `Email` normalised at construction, `PasswordHash` and `SecretHash` both redacting in `ToString`, `DeviceDescriptor` truncating an attacker-controlled user agent |
 | 2026-08-15 | `IDN-002` | AI Agent — Claude | `UserStatus`, `DeviceType`, `SessionRevocationReason`, `SingleUseTokenPurpose` |

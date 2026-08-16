@@ -165,11 +165,11 @@ public sealed class LibraryScopeProviderTests
 
     // ---------- Members and anonymous callers ----------
 
-    [TestCase(UserRole.Basic)]
-    [TestCase(UserRole.Plus)]
-    [TestCase(UserRole.Max)]
-    public async Task Member_GetsAnEmptyScope(UserRole role)
+    [Test]
+    public async Task Member_GetsAnEmptyScope()
     {
+        const UserRole role = UserRole.Member;
+
         var member = Guid.NewGuid();
         // Even with a stray assignment row, a member must hold no staff authority.
         await GrantAsync(member, Midtown);

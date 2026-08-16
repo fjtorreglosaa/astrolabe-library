@@ -243,6 +243,29 @@ can silently skip a transition is not a trail.
 
 ---
 
+## Authority and entitlement are two facts
+
+A **role** says what a user may do. A **plan** says what they bought. They change for different
+reasons, at different rates, decided by different people — so they are never the same field.
+
+`UserRole` once held `Basic | Plus | Max | Admin | SuperAdmin`, which meant a member's role *was*
+their subscription. Keeping the two in step needed a mirror handler, and every domain that read a
+plan had to know which of the two representations was current. `GLOBAL-019` removed the tiers:
+`UserRole` is `Member | Admin | SuperAdmin`, and `Subscription.Plan` is the only authority for a
+plan, reached through `IEntitlementProvider`.
+
+Before adding a field, ask what single question it answers. If the honest answer names two, it is
+two fields.
+
+## Strings that must match an enum use `nameof`
+
+Authorization policies, claim values and anything else compared against an enum's name are written
+`nameof(UserRole.Member)`, never `"Member"`. A literal compiles perfectly against a renamed enum and
+fails only at run time — the same shape of defect as a value converter, and the reason `GLOBAL-019`
+did not lock every member out of the API.
+
+---
+
 ## After completing any task
 
 1. Mark the task done in the relevant `tasks.md`.
@@ -299,8 +322,6 @@ aggregate root, not before.
 
 Open decisions awaiting the user:
 
-- `GLOBAL-019` — remove the plan tiers from `UserRole`? `Subscription.Plan` is the authority and the
-  role now mirrors it, so one fact has two representations.
 - `BLOCK-004` — the Devices and sessions screen has no approved design.
 - `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients.
 - `GLOBAL-009` — define the reward point redemption cap (`BR-STR-007`). Earning is built and

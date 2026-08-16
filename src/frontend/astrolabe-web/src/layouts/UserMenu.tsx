@@ -40,8 +40,10 @@ export const UserMenu = () => {
           <Typography variant="caption" color="text.secondary">
             {user.email}
           </Typography>
+          {/* A member sees their plan and staff see their role. Showing "Member" to somebody who
+              pays for Max would tell them nothing they did not know and hide the thing they did. */}
           <Typography variant="overline" color="primary.main">
-            {user.role}
+            {user.isStaff ? user.role : (user.plan ?? 'Member')}
           </Typography>
         </Stack>
 

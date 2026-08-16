@@ -3,6 +3,7 @@ using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
 using Astrolabe.Domain.Features.Identity.Events;
 using Astrolabe.Domain.Features.Identity.ValueObjects;
+using Astrolabe.Domain.Features.Membership.Enums;
 using Astrolabe.Domain.Primitives;
 
 namespace Astrolabe.Domain.Features.Identity.Entities;
@@ -88,7 +89,7 @@ public sealed class User : AggregateRoot
         string fullName,
         Guid countryId,
         Guid cityId,
-        UserRole plan,
+        PlanTier plan,
         DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(email);
@@ -99,18 +100,17 @@ public sealed class User : AggregateRoot
             return Result.Failure<User>(IdentityErrors.FullNameRequired);
         }
 
-        // A member's role is their plan. Registering directly into a staff role would bypass
-        // BR-NET-008, which reserves that to a super administrator.
-        if (!plan.IsMember())
-        {
-            return Result.Failure<User>(IdentityErrors.InvalidCredentials);
-        }
-
+        // Registration always produces a member. Staff arrive by invitation, which BR-NET-008
+        // reserves to a super administrator — and since the role no longer carries a plan, there is
+        // no longer a way for a chosen plan to smuggle somebody into one.
         var user = new User(
             Guid.NewGuid(), email, passwordHash, fullName.Trim(),
-            countryId, cityId, plan, UserStatus.PendingVerification, now);
+            countryId, cityId, UserRole.Member, UserStatus.PendingVerification, now);
 
-        user.Raise(new UserRegistered(Guid.NewGuid(), now, user.Id, email.Value, fullName.Trim()));
+        // The plan travels on the event rather than on the user, because membership owns it. This is
+        // what lets the subscription be opened without identity knowing what a plan is worth.
+        user.Raise(new UserRegistered(
+            Guid.NewGuid(), now, user.Id, email.Value, fullName.Trim(), plan));
 
         return Result.Success(user);
     }
@@ -314,24 +314,6 @@ public sealed class User : AggregateRoot
 
     /// <summary>Changes the role. Reserved to a super administrator, enforced by the handler.</summary>
     public void ChangeRole(UserRole role) => Role = role;
-
-    /// <summary>
-    /// Mirrors the member's subscription plan onto their role.
-    ///
-    /// Separate from <see cref="ChangeRole"/> although both assign the same field: this one is
-    /// driven by the membership domain and may only ever set a member plan, while that one is a
-    /// super administrator's act and may grant staff authority. Collapsing them would let a plan
-    /// change reach a code path allowed to make someone an administrator.
-    /// </summary>
-    public void ChangePlan(UserRole plan)
-    {
-        if (!plan.IsMember() || !Role.IsMember())
-        {
-            return;
-        }
-
-        Role = plan;
-    }
 
     /// <summary>Moves the member to another city of residence. Recalculates plan reach elsewhere.</summary>
     public void ChangeResidence(Guid countryId, Guid cityId)

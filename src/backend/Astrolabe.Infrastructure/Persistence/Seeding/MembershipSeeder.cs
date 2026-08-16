@@ -16,16 +16,17 @@ namespace Astrolabe.Infrastructure.Persistence.Seeding;
 /// nothing, and they would see an empty membership screen rather than the plan they signed up for.
 /// </para>
 /// <para>
-/// Idempotent, and starts each member at the plan their role records — the one place the role is
-/// read as the authority, because before a subscription exists it is the only record of the plan.
+/// Idempotent, and starts every backfilled member on <see cref="PlanTier.Basic"/>. Until
+/// GLOBAL-019 this read the tier out of the member's role; roles no longer carry one, and there is
+/// no other record of what an unsubscribed member bought — so the free tier is the only honest
+/// answer. Granting a paid plan on a guess would hand out entitlements nobody paid for, while Basic
+/// is recoverable: an upgrade is one screen away and charges correctly.
 /// </para>
 /// </summary>
 public sealed class MembershipSeeder(
     AstrolabeDbContext context,
     ILogger<MembershipSeeder> logger)
 {
-    private static readonly UserRole[] MemberRoles = [UserRole.Basic, UserRole.Plus, UserRole.Max];
-
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
@@ -35,8 +36,8 @@ public sealed class MembershipSeeder(
             .Select(s => s.MemberId);
 
         var unsubscribed = await context.Users
-            .Where(u => MemberRoles.Contains(u.Role) && !subscribedMemberIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Role })
+            .Where(u => u.Role == UserRole.Member && !subscribedMemberIds.Contains(u.Id))
+            .Select(u => u.Id)
             .ToListAsync(cancellationToken);
 
         if (unsubscribed.Count == 0)
@@ -45,9 +46,9 @@ public sealed class MembershipSeeder(
             return;
         }
 
-        foreach (var member in unsubscribed)
+        foreach (var memberId in unsubscribed)
         {
-            var subscription = Subscription.Start(member.Id, PlanTierFrom(member.Role), now);
+            var subscription = Subscription.Start(memberId, PlanTier.Basic, now);
 
             // The event exists to trigger billing and audit for a real sign-up. A backfill is
             // neither, so it is cleared rather than dispatched into handlers that would charge.
@@ -61,11 +62,4 @@ public sealed class MembershipSeeder(
         logger.LogInformation(
             "Opened {Count} subscription(s) for members that had none.", unsubscribed.Count);
     }
-
-    private static PlanTier PlanTierFrom(UserRole role) => role switch
-    {
-        UserRole.Plus => PlanTier.Plus,
-        UserRole.Max => PlanTier.Max,
-        _ => PlanTier.Basic
-    };
 }

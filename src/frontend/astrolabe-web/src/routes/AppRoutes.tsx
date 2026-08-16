@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
-import { RoleGuard, StaffRoles, SuperAdminRoles, PaidPlanRoles } from '../features/auth/components/RoleGuard';
+import { PaidPlans, PlanGuard } from '../features/auth/components/PlanGuard';
+import { RoleGuard, StaffRoles, SuperAdminRoles } from '../features/auth/components/RoleGuard';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { SignUpPage } from '../features/auth/pages/SignUpPage';
 import { VerifyEmailPage } from '../features/auth/pages/VerifyEmailPage';
@@ -45,7 +46,7 @@ export const AppRoutes = () => (
         <Route path="/settings/devices" element={<DevicesAndSessionsPage />} />
         <Route path="/settings/membership" element={<MembershipPage />} />
 
-        <Route element={<RoleGuard allow={PaidPlanRoles} />}>
+        <Route element={<PlanGuard allow={PaidPlans} />}>
           <Route path="/ai" element={<PlaceholderScreen title="AI recommendations" stage="Stage 7" />} />
         </Route>
 

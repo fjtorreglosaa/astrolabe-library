@@ -37,10 +37,11 @@ export const AppLayout = () => {
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const colorScheme = useUiStore((state) => state.colorScheme);
   const toggleColorScheme = useUiStore((state) => state.toggleColorScheme);
-  const { role } = useAuth();
+  const { role, plan } = useAuth();
 
-  // The sidebar is composed from the caller's role, so a member never sees an administration entry.
-  const sections = role ? sectionsFor(role) : [];
+  // Composed from the caller's role and plan: the role keeps administration entries away from a
+  // member, and the plan keeps paid surfaces away from a member who has not bought them.
+  const sections = role ? sectionsFor(role, plan) : [];
 
   const drawerContent = (
     <Box role="navigation" aria-label="Main navigation" sx={{ overflowY: 'auto' }}>

@@ -13,6 +13,7 @@ using Astrolabe.Application.Tests.TestSupport;
 using Astrolabe.Domain.Abstractions;
 using FluentAssertions;
 using Moq;
+using Astrolabe.Domain.Features.Membership.Enums;
 
 namespace Astrolabe.Application.Tests.Features.Identity;
 
@@ -78,7 +79,7 @@ public sealed class SignInAndSessionHandlerTests
     {
         var user = User.Register(
             Email.Create("ada@example.com").Value, PasswordHash.FromHashedValue("hash"),
-            "Ada Lovelace", Guid.NewGuid(), Guid.NewGuid(), UserRole.Plus, Now).Value;
+            "Ada Lovelace", Guid.NewGuid(), Guid.NewGuid(), PlanTier.Plus, Now).Value;
         user.Verify(Now);
         return user;
     }
@@ -147,7 +148,7 @@ public sealed class SignInAndSessionHandlerTests
     {
         var user = User.Register(
             Email.Create("ada@example.com").Value, PasswordHash.FromHashedValue("hash"),
-            "Ada", Guid.NewGuid(), Guid.NewGuid(), UserRole.Plus, Now).Value;
+            "Ada", Guid.NewGuid(), Guid.NewGuid(), PlanTier.Plus, Now).Value;
 
         _users.Setup(u => u.GetByEmailAsync(It.IsAny<Email>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);

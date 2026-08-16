@@ -233,9 +233,12 @@ Authentication will use token-based authentication issued entirely by the backen
 
 There is no separate librarian role. A library administrator scoped to specific libraries fulfils that function.
 
-### Member — Basic, Plus, Max
+### Member
 
-The member's plan is their role. Access to:
+One role, `Member`, whatever the plan. What a member may **do** is this list; how far each entry
+reaches is decided by their plan, which lives on their subscription and never on their role.
+
+Access to:
 
 * Catalogue browsing and search across the whole network.
 * Book details.

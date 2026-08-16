@@ -1,40 +1,56 @@
 /**
  * Sidebar structure, transcribed from the prototype's `navRaw` definition.
  *
- * `visibleTo` is declared now but not enforced until Stage 1 introduces roles. Keeping it here means
- * the shape does not have to change when authorization arrives.
+ * `visibleTo` names the audience an entry belongs to; `requiresPaidPlan` narrows a member entry to
+ * the tiers that paid for it. Both are convenience only — the API refuses the call regardless.
  */
 
 import type { UserRole } from '../features/auth/api/authApi';
+import type { PlanTier } from '../features/membership/api/membershipApi';
 
 export type Audience = 'member' | 'staff' | 'superAdmin';
 
 const AUDIENCE_ROLES: Record<Audience, readonly UserRole[]> = {
-  member: ['Basic', 'Plus', 'Max'],
+  member: ['Member'],
   staff: ['Admin', 'SuperAdmin'],
   superAdmin: ['SuperAdmin'],
 };
 
+/** The tiers that unlock a `requiresPaidPlan` entry. */
+const PAID_PLANS: readonly PlanTier[] = ['Plus', 'Max'];
+
 /**
- * Whether a role may see an entry.
+ * Whether a user may see an entry.
+ *
+ * Takes the role *and* the plan because the two answer different halves of the question: the role
+ * decides which audience someone belongs to, and only the plan decides whether a paid surface is
+ * open to them. Until GLOBAL-019 one argument did both, which worked exactly as long as nobody
+ * could be a member on one tier while their role said another.
  *
  * `requiresPaidPlan` implements the prototype's rule that Basic never sees the AI surface — the
  * entry is hidden, and the API refuses the call regardless.
  */
-export const isVisibleTo = (item: NavigationItem, role: UserRole): boolean => {
+export const isVisibleTo = (
+  item: NavigationItem,
+  role: UserRole,
+  plan: PlanTier | null,
+): boolean => {
   const allowed = item.visibleTo.some((audience) => AUDIENCE_ROLES[audience].includes(role));
 
   if (!allowed) {
     return false;
   }
 
-  return !item.requiresPaidPlan || role === 'Plus' || role === 'Max';
+  return !item.requiresPaidPlan || (plan !== null && PAID_PLANS.includes(plan));
 };
 
-/** Sections with at least one entry the role may see. */
-export const sectionsFor = (role: UserRole): NavigationSection[] =>
+/** Sections with at least one entry the user may see. */
+export const sectionsFor = (role: UserRole, plan: PlanTier | null): NavigationSection[] =>
   navigationSections
-    .map((section) => ({ ...section, items: section.items.filter((item) => isVisibleTo(item, role)) }))
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => isVisibleTo(item, role, plan)),
+    }))
     .filter((section) => section.items.length > 0);
 
 export interface NavigationItem {

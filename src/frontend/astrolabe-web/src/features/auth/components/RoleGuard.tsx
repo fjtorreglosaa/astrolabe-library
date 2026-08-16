@@ -23,4 +23,3 @@ export const RoleGuard = ({ allow }: { allow: readonly UserRole[] }) => {
 
 export const StaffRoles = ['Admin', 'SuperAdmin'] as const;
 export const SuperAdminRoles = ['SuperAdmin'] as const;
-export const PaidPlanRoles = ['Plus', 'Max'] as const;

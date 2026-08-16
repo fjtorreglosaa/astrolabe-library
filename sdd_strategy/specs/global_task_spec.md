@@ -43,7 +43,7 @@ belonging to a single domain live in that domain's `tasks.md`.
 | `GLOBAL-012` | Full Freshness Protocol sweep before MVP acceptance | ⬜ | — | — | `PLAN-001` Stage 8 |
 | `GLOBAL-018` | **Evaluate domain split: `catalog`** | ✅ | — | `catalog` kept whole | **Resolved 2026-08-16: kept undivided, as a documented exception to SDD+ §6.2.** The threshold is a smell detector and here it reports a false positive — see the reasoning below. Revisit if the rule count passes 35 or a second aggregate root appears |
 | `GLOBAL-020` | Promote audit to its own bounded context | ✅ | — | `Domain/Features/Audit/`, `IAuditUnitOfWork` | Done 2026-08-16. `AuditEntry` and `IAuditRepository` moved out of `identity`. Five `network` handlers no longer reach into `IIdentityUnitOfWork` for one row; `catalog` can write BR-CAT-025 entries without knowing identity exists. Rule 24 |
-| `GLOBAL-019` | **Decide whether plan tiers stay inside `UserRole`** | ⬜ | — | — | Raised 2026-08-15 during Stage 2. `Subscription.Plan` is now the authority and `User.Role` mirrors it via an event handler, so one fact has two representations. Nothing authorises on the plan portion of the role, so this is debt rather than a defect. Removing the tiers would rewrite token claims, policies, seeds and the frontend — worth doing before `store` reads entitlements, not during Stage 2 |
+| `GLOBAL-019` | **Remove the plan tiers from `UserRole`** | ✅ | — | `UserRole` = `Member`/`Admin`/`SuperAdmin`; `SeparateRoleFromPlan` migration | **Resolved 2026-08-16: tiers removed.** `Subscription.Plan` is now the sole authority for what a member bought and `UserRole` carries authority only. `MirrorPlanOntoUserRoleHandler` deleted, `User.ChangePlan` deleted, `UserRegistered` carries the chosen `PlanTier`, `/auth/me` returns `plan`, and the sidebar's `requiresPaidPlan` reads the plan instead of the role. 35 references touched; 548 backend and 100 frontend tests green; migration applied, reverted and reapplied against the running database. See the resolution below |
 | `GLOBAL-016` | Adopt `Features/` in all three layers, plus RULE 17 and RULE 20 | ✅ | — | — | Done 2026-08-15. Domain, Application and Infrastructure now share one shape. A feature holds only Commands, Queries and Events |
 | `GLOBAL-017` | Unit of work per bounded context, transactions, and domain event dispatch | ✅ | — | — | Done 2026-08-15. Handler dependencies cut from 93 to 55 (41%). Nine domain events were being raised and none dispatched; the dispatcher removed `SessionRevoker` entirely |
 
@@ -227,3 +227,63 @@ API.
 | Licence and provider changes | 2 | 2 |
 | Implementation | 0 | 2 |
 | **Total** | **12** | **18** |
+
+---
+
+## `GLOBAL-019` — resolution, 2026-08-16
+
+### What was wrong
+
+`UserRole` held `Basic = 0, Plus = 1, Max = 2, Admin = 10, SuperAdmin = 20`. A member's role therefore
+*was* their plan. When `membership` arrived in Stage 2 it introduced `Subscription.Plan` as the
+authority, and the old field could not simply be dropped mid-stage — so `MirrorPlanOntoUserRoleHandler`
+copied every plan change back onto the role.
+
+That mirror was correct and it worked. The problem was never drift; it was that **one fact had two
+representations**, and every domain added after Stage 2 was one more reader that had to know which of
+the two was current. `store` was about to be the fourth.
+
+### What was done
+
+| Before | After |
+|---|---|
+| `UserRole.Basic \| Plus \| Max \| Admin \| SuperAdmin` | `UserRole.Member \| Admin \| SuperAdmin` |
+| `User.Register(..., UserRole plan, ...)`, refusing a staff value at run time | `User.Register(..., PlanTier plan, ...)` — a staff value no longer type-checks |
+| `User.ChangePlan(UserRole)` beside `ChangeRole(UserRole)` | `ChangePlan` deleted; only `ChangeRole` remains |
+| `MirrorPlanOntoUserRoleHandler` | deleted |
+| `UserRegistered(EventId, OccurredAt, UserId, Email, FullName)` | `+ PlanTier Plan` |
+| `StartSubscriptionOnRegistrationHandler` read the plan back off the role | reads it off the event; the `IUserRepository` dependency and its query are gone |
+| `RequireRole("Basic", "Plus", "Max")` | `RequireRole(nameof(UserRole.Member))` |
+| `CurrentUserDto` had no plan | `+ PlanTier? Plan`, resolved through `IEntitlementProvider`; null for staff |
+| Frontend `isVisibleTo(item, role)`, `role === 'Plus' \|\| role === 'Max'` | `isVisibleTo(item, role, plan)`; new `PlanGuard` replaces `RoleGuard allow={PaidPlanRoles}` |
+
+### Decisions worth recording
+
+**The plan travels on the event.** `identity` does not store what a visitor bought, so the chosen tier
+has nowhere to live between the pricing screen and the subscription. Putting it on `UserRegistered` is
+what lets `identity` stay ignorant of what a plan is worth.
+
+**Policies bind with `nameof`, not literals.** Three string literals would have compiled perfectly
+against a renamed enum and locked every member out at run time. This is the exact failure mode the
+project has already been bitten by twice with value converters — code that compiles, passes its unit
+tests, and is wrong only when it runs.
+
+**The migration rescues before it discards.** A member on the old role 1 or 2 with no active
+subscription held their plan in exactly one place, and step two of the migration overwrites it. In
+practice `MembershipSeeder` guarantees this matches nothing — it is written anyway, because "should
+match nothing" and "cannot lose a paid plan" are different guarantees and only the second belongs in a
+migration. That rescue is also what makes `Down` genuinely reversible rather than a guess, which was
+verified by reverting and reapplying against the running database.
+
+**`MembershipSeeder` now backfills at Basic.** It used to read the tier off the role. Nothing records
+what an unsubscribed member bought any more, so the free tier is the only honest answer: granting a
+paid plan on a guess hands out entitlements nobody paid for, while Basic is recoverable in one screen.
+`DemoAccountSeeder` therefore opens the demo member's Plus subscription itself rather than leaving it
+to the backfill.
+
+### Deployment consequence
+
+Access tokens issued before this change carry `"Plus"` or `"Max"` in the role claim and match no
+policy, so live sessions break on the first authorised request. Refresh reissues a correct token, but
+any session holding only an access token is signed out. Acceptable in development; on a deployed
+environment this needs either a short token lifetime window or a deliberate mass sign-out.

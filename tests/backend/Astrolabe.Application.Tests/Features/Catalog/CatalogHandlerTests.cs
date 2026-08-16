@@ -242,7 +242,7 @@ public sealed class CatalogHandlerTests
     [Test]
     public async Task AMemberCannotMoveABookThroughItsLifecycle()
     {
-        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Max);
+        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Member);
         var book = ABook();
         TheCatalogHolds(book);
 

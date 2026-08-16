@@ -4,6 +4,7 @@ using Astrolabe.Domain.Features.Identity.Errors;
 using Astrolabe.Domain.Features.Identity.Events;
 using Astrolabe.Domain.Features.Identity.ValueObjects;
 using FluentAssertions;
+using Astrolabe.Domain.Features.Membership.Enums;
 
 namespace Astrolabe.Domain.Tests.Features.Identity;
 
@@ -20,10 +21,10 @@ public sealed class UserTests
 
     private static PasswordHash AHash() => PasswordHash.FromHashedValue("AQAAAAIAAYag...");
 
-    private static User ARegisteredUser(UserRole plan = UserRole.Plus) =>
+    private static User ARegisteredUser(PlanTier plan = PlanTier.Plus) =>
         User.Register(AnEmail(), AHash(), "Ada Lovelace", Guid.NewGuid(), Guid.NewGuid(), plan, Now).Value;
 
-    private static User AnActiveUser(UserRole plan = UserRole.Plus)
+    private static User AnActiveUser(PlanTier plan = PlanTier.Plus)
     {
         var user = ARegisteredUser(plan);
         user.Verify(Now);
@@ -56,7 +57,7 @@ public sealed class UserTests
         var country = Guid.NewGuid();
         var city = Guid.NewGuid();
 
-        var user = User.Register(AnEmail(), AHash(), "Ada", country, city, UserRole.Basic, Now).Value;
+        var user = User.Register(AnEmail(), AHash(), "Ada", country, city, PlanTier.Basic, Now).Value;
 
         user.CountryId.Should().Be(country);
         user.CityId.Should().Be(city);
@@ -66,25 +67,42 @@ public sealed class UserTests
     public void Register_TrimsTheFullName()
     {
         User.Register(AnEmail(), AHash(), "  Ada Lovelace  ", Guid.NewGuid(), Guid.NewGuid(),
-            UserRole.Plus, Now).Value.FullName.Should().Be("Ada Lovelace");
+            PlanTier.Plus, Now).Value.FullName.Should().Be("Ada Lovelace");
     }
 
     [TestCase("")]
     [TestCase("   ")]
     public void Register_WithoutAName_Fails(string name)
     {
-        User.Register(AnEmail(), AHash(), name, Guid.NewGuid(), Guid.NewGuid(), UserRole.Plus, Now)
+        User.Register(AnEmail(), AHash(), name, Guid.NewGuid(), Guid.NewGuid(), PlanTier.Plus, Now)
             .Error.Should().Be(IdentityErrors.FullNameRequired);
     }
 
-    [TestCase(UserRole.Admin)]
-    [TestCase(UserRole.SuperAdmin)]
-    public void Register_DirectlyIntoAStaffRole_IsRefused(UserRole role)
+    [TestCase(PlanTier.Basic)]
+    [TestCase(PlanTier.Plus)]
+    [TestCase(PlanTier.Max)]
+    public void Register_AlwaysProducesAMember_WhicheverPlanWasChosen(PlanTier plan)
     {
-        // Otherwise public registration would bypass BR-NET-008, which reserves staff creation to a
-        // super administrator.
-        User.Register(AnEmail(), AHash(), "Ada", Guid.NewGuid(), Guid.NewGuid(), role, Now)
-            .IsFailure.Should().BeTrue();
+        // The old shape of this test asserted that a staff role passed to Register was refused,
+        // because the plan argument was a UserRole and could carry one. GLOBAL-019 made that
+        // unrepresentable: the argument is a PlanTier, so the escalation route BR-NET-008 forbids
+        // no longer type-checks. What is left worth asserting is the other half — that buying an
+        // expensive plan buys entitlements and never authority.
+        var user = ARegisteredUser(plan);
+
+        user.Role.Should().Be(UserRole.Member);
+        user.Role.IsStaff().Should().BeFalse();
+    }
+
+    [TestCase(PlanTier.Basic)]
+    [TestCase(PlanTier.Max)]
+    public void Register_CarriesTheChosenPlanOnTheEvent(PlanTier plan)
+    {
+        // The plan is not stored on the user, so the event is the only thing that can tell
+        // membership which subscription to open. If it were dropped here every registration would
+        // silently land on the free tier.
+        ARegisteredUser(plan).DomainEvents.OfType<UserRegistered>()
+            .Should().ContainSingle().Which.Plan.Should().Be(plan);
     }
 
     // ---------- Invitation, BR-IDN-006 ----------
@@ -106,11 +124,10 @@ public sealed class UserTests
             .EnsureCanSignIn(Now).Error.Should().Be(IdentityErrors.InvalidCredentials);
     }
 
-    [TestCase(UserRole.Basic)]
-    [TestCase(UserRole.Max)]
-    public void Invite_WithAMemberRole_Fails(UserRole role)
+    [Test]
+    public void Invite_WithAMemberRole_Fails()
     {
-        User.Invite(AnEmail(), "Dana", role, Now).IsFailure.Should().BeTrue();
+        User.Invite(AnEmail(), "Dana", UserRole.Member, Now).IsFailure.Should().BeTrue();
     }
 
     [Test]

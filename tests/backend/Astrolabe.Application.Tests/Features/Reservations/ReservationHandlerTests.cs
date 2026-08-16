@@ -57,7 +57,7 @@ public sealed class ReservationHandlerTests
 
         _currentUser = new Mock<ICurrentUser>();
         _currentUser.SetupGet(u => u.UserId).Returns(MemberId);
-        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Max);
+        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Member);
 
         _entitlements = new Mock<IEntitlementProvider>();
         OnPlan(PlanTier.Max);
@@ -313,7 +313,7 @@ public sealed class ReservationHandlerTests
     [Test]
     public async Task AMember_CannotCheckInTheirOwnLoan()
     {
-        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Max);
+        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Member);
         var book = ABook();
         var reservation = AnActiveReservation(book, Midtown);
 

@@ -1,7 +1,7 @@
 # Identity — Technical Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
 **Version:** 1
 **Implements:** `BR-IDN-001` to `BR-IDN-033`
 
@@ -37,9 +37,14 @@ public sealed class User : Entity
     public DateTimeOffset? LockedUntil { get; private set; }
     public int FailedSignInAttempts { get; private set; }
 
+    // Takes a PlanTier, not a UserRole. Registration decides what somebody buys; it always
+    // produces UserRole.Member, so the plan argument cannot smuggle anyone into staff authority.
+    // The chosen plan is not stored on the user — it travels on UserRegistered to membership.
     public static Result<User> Register(Email email, PasswordHash hash, string fullName,
-                                        Guid countryId, Guid cityId, DateTimeOffset now);
-    public static Result<User> Invite(Email email, UserRole role, DateTimeOffset now);
+                                        Guid countryId, Guid cityId, PlanTier plan,
+                                        DateTimeOffset now);
+    public static Result<User> Invite(Email email, string fullName, UserRole role,
+                                      DateTimeOffset now);
 
     public Result Verify(DateTimeOffset now);
     public Result Block();
@@ -111,7 +116,8 @@ are decided inside the aggregate, never by a handler, because a handler could fo
 
 ### Enumerations
 
-`UserRole` — `Basic`, `Plus`, `Max`, `Admin`, `SuperAdmin`.
+`UserRole` — `Member`, `Admin`, `SuperAdmin`. Authority only. The plan tiers were removed by
+`GLOBAL-019`; `Subscription.Plan` is their sole authority.
 `UserStatus` — `PendingVerification`, `Active`, `Blocked`, `Deleted`, `Invited`.
 `DeviceType` — `Web`, `Mobile`, `Tablet`, `Desktop`, `Unknown`.
 `SessionRevocationReason` — `SignedOut`, `RevokedByUser`, `PasswordChanged`, `TokenReuseDetected`,

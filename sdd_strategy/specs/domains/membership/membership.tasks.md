@@ -64,6 +64,7 @@ Built before `catalog`, which consumes `MemberEntitlement`.
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | `GLOBAL-019` | AI Agent — Claude | **`Subscription.Plan` is now the sole authority for a member's plan.** `MirrorPlanOntoUserRoleHandler` deleted. `StartSubscriptionOnRegistrationHandler` reads the tier off `UserRegistered` instead of off the user's role, which also removed its `IUserRepository` dependency and a query. `CurrentUserDto` gained `Plan`, resolved through `IEntitlementProvider`, so the frontend stops inferring a plan from a role. `SeparateRoleFromPlan` migration verified up, down and up again against the running database |
 | 2026-08-15 | `MBR-001` to `MBR-005` | AI Agent — Claude | Plan table, billing cycle and proration. 37 domain tests |
 | 2026-08-15 | `MBR-006` to `MBR-011` | AI Agent — Claude | `Subscription` aggregate and its 5 events |
 | 2026-08-15 | `MBR-012`, `MBR-013` | AI Agent — Claude | Owned `BillingCycle` and `ScheduledPlanChange`. Down-migration reverted and reapplied against the running database on 2026-08-16, not merely generated |

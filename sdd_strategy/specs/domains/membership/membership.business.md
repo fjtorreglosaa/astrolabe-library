@@ -1,7 +1,7 @@
 # Membership — Business Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
 **Version:** 1
 **Ring:** MVP
 
@@ -24,7 +24,7 @@ what stops the plan rules being reimplemented in four places.
 
 | Term | Definition |
 |---|---|
-| **Plan** | A subscription tier: Basic, Plus or Max. For a member, their plan **is** their role |
+| **Plan** | A subscription tier: Basic, Plus or Max. Held on the subscription, which is its **only** authority. Distinct from the member's role, which carries authority and never a tier |
 | **Subscription** | A member's holding of a plan over a period. Exactly one is active; the rest are history |
 | **Billing cycle** | The monthly period a subscription is paid for, from its start date to its renewal date |
 | **Anchor day** | The day of the month a cycle renews on, fixed at subscription start. Anniversary billing, not a calendar day shared by everyone |

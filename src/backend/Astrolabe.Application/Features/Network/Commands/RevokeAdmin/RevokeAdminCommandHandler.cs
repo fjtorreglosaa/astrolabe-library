@@ -63,7 +63,7 @@ public sealed class RevokeAdminCommandHandler(
         else
         {
             // Demoted to the free plan rather than deleted: the person may still be a member.
-            target.ChangeRole(UserRole.Basic);
+            target.ChangeRole(UserRole.Member);
         }
 
         await audit.Entries.AddAsync(

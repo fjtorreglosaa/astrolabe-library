@@ -455,7 +455,7 @@ Arbitration rule confirmed by the product owner: **the prototype has the final w
 
 | # | Conflict | Resolution |
 |---|---|---|
-| C1 | Role model | Basic / Plus / Max / Admin / Super Admin. The *Librarian* role is removed |
+| C1 | Role model | Member / Admin / Super Admin. The *Librarian* role is removed. Originally recorded as Basic / Plus / Max / Admin / Super Admin; `GLOBAL-019` separated the three plan tiers out of the role on 2026-08-16, so the tiers are now plans held on a subscription and not roles |
 | C2 | Functional scope | The prototype's full scope is adopted |
 | C3 | Max plan discount | 15%, not 20% |
 | C4 | Multi-device sessions | Included. New screen under Settings |

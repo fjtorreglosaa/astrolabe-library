@@ -61,9 +61,7 @@ public sealed class LibraryCommandHandlerTests
 
     // ---------- BR-NET-008: authorization ----------
 
-    [TestCase(UserRole.Basic)]
-    [TestCase(UserRole.Plus)]
-    [TestCase(UserRole.Max)]
+    [TestCase(UserRole.Member)]
     [TestCase(UserRole.Admin)]
     public async Task CreateLibrary_ByAnyoneButASuperAdmin_IsRefused(UserRole role)
     {

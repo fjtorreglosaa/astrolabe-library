@@ -13,6 +13,7 @@ using Astrolabe.Domain.Features.Identity.ValueObjects;
 using Astrolabe.Application.Tests.TestSupport;
 using FluentAssertions;
 using Moq;
+using Astrolabe.Domain.Features.Membership.Enums;
 
 namespace Astrolabe.Application.Tests.Features.Identity;
 
@@ -64,7 +65,7 @@ public sealed class RefreshTokenCommandHandlerTests
         var user = User.Register(
             Email.Create("ada@example.com").Value,
             PasswordHash.FromHashedValue("hash"),
-            "Ada Lovelace", Guid.NewGuid(), Guid.NewGuid(), UserRole.Plus, Now).Value;
+            "Ada Lovelace", Guid.NewGuid(), Guid.NewGuid(), PlanTier.Plus, Now).Value;
 
         user.Verify(Now);
         return user;

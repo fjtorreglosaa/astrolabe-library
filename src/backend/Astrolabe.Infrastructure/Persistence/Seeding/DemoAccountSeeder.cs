@@ -2,6 +2,8 @@ using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.ValueObjects;
+using Astrolabe.Domain.Features.Membership.Entities;
+using Astrolabe.Domain.Features.Membership.Enums;
 using Astrolabe.Domain.Features.Network.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -28,11 +30,16 @@ public sealed class DemoAccountSeeder(
     /// <summary>The shared password from the prototype's sign-in screen.</summary>
     private const string DemoPassword = "Testing1234*";
 
-    private static readonly (string Email, string FullName, UserRole Role, string? HomeCity)[] Accounts =
+    /// <summary>
+    /// The three accounts on the prototype's sign-in screen. <c>Plan</c> is null for staff, who buy
+    /// nothing — since GLOBAL-019 the role no longer doubles as a plan, so the demo member's tier
+    /// has to be stated here rather than read back out of their role.
+    /// </summary>
+    private static readonly (string Email, string FullName, UserRole Role, PlanTier? Plan, string? HomeCity)[] Accounts =
     [
-        ("fjtorreglosaa@gmail.com", "Francisco Torreglosa", UserRole.Plus, "New York"),
-        ("admin@astrolabe.co", "Dana Whitfield", UserRole.Admin, null),
-        ("super@astrolabe.co", "Francisco Torreglosa", UserRole.SuperAdmin, null)
+        ("fjtorreglosaa@gmail.com", "Francisco Torreglosa", UserRole.Member, PlanTier.Plus, "New York"),
+        ("admin@astrolabe.co", "Dana Whitfield", UserRole.Admin, null, null),
+        ("super@astrolabe.co", "Francisco Torreglosa", UserRole.SuperAdmin, null, null)
     ];
 
     /// <summary>The libraries the demo administrator manages, per the prototype.</summary>
@@ -52,7 +59,7 @@ public sealed class DemoAccountSeeder(
         var hash = passwordHasher.Hash(DemoPassword);
         var seeded = 0;
 
-        foreach (var (email, fullName, role, homeCity) in Accounts)
+        foreach (var (email, fullName, role, plan, homeCity) in Accounts)
         {
             var address = Email.Create(email);
 
@@ -67,11 +74,22 @@ public sealed class DemoAccountSeeder(
             }
 
             var user = role.IsMember()
-                ? await CreateMemberAsync(address.Value, fullName, role, homeCity!, hash, now, cancellationToken)
+                ? await CreateMemberAsync(address.Value, fullName, plan!.Value, homeCity!, hash, now, cancellationToken)
                 : CreateStaff(address.Value, fullName, role, hash, now);
 
             context.Users.Add(user);
             seeded++;
+
+            // Opened here rather than left to MembershipSeeder's backfill. That backfill can only
+            // assume the free tier now that a role carries no plan, and the prototype presents this
+            // account as Plus — a demo member landing on Basic would misrepresent every screen that
+            // reads an entitlement.
+            if (plan is { } tier)
+            {
+                var subscription = Subscription.Start(user.Id, tier, now);
+                subscription.ClearDomainEvents();
+                context.Subscriptions.Add(subscription);
+            }
 
             if (role is UserRole.Admin)
             {
@@ -94,7 +112,7 @@ public sealed class DemoAccountSeeder(
     }
 
     private async Task<User> CreateMemberAsync(
-        Email email, string fullName, UserRole plan, string cityName,
+        Email email, string fullName, PlanTier plan, string cityName,
         PasswordHash hash, DateTimeOffset now, CancellationToken cancellationToken)
     {
         var city = await context.Cities.FirstOrDefaultAsync(c => c.Name == cityName, cancellationToken)

@@ -57,7 +57,7 @@ public sealed class BillingHandlerTests
 
         _currentUser = new Mock<ICurrentUser>();
         _currentUser.SetupGet(u => u.UserId).Returns(MemberId);
-        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Plus);
+        _currentUser.SetupGet(u => u.Role).Returns(UserRole.Member);
 
         _locations = new Mock<ILibraryLocationProvider>();
         _locations.Setup(l => l.GetAllAsync(It.IsAny<CancellationToken>()))

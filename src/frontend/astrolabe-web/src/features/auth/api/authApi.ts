@@ -1,13 +1,21 @@
 import { httpClient, setAccessToken } from '../../../shared/api/httpClient';
+import type { PlanTier } from '../../membership/api/membershipApi';
 
-/** Roles as the API reports them. A member's role is their plan. */
-export type UserRole = 'Basic' | 'Plus' | 'Max' | 'Admin' | 'SuperAdmin';
+/**
+ * Roles as the API reports them.
+ *
+ * The three member tiers used to live in this union, so a member's role *was* their plan. They no
+ * longer do: a role says what someone may do, and `CurrentUser.plan` says what they bought.
+ */
+export type UserRole = 'Member' | 'Admin' | 'SuperAdmin';
 
 export interface CurrentUser {
   id: string;
   email: string;
   fullName: string;
   role: UserRole;
+  /** The member's current plan, or null for staff, who hold none. */
+  plan: PlanTier | null;
   countryId: string | null;
   cityId: string | null;
   isStaff: boolean;
@@ -53,8 +61,8 @@ export const getCurrentUser = async (): Promise<CurrentUser> => {
   return data;
 };
 
-/** The plan a member registers on. Only the three member tiers are selectable. */
-export type MemberPlan = Extract<UserRole, 'Basic' | 'Plus' | 'Max'>;
+/** The plan a member registers on. Registration never chooses a role. */
+export type MemberPlan = PlanTier;
 
 export interface RegisterInput {
   email: string;

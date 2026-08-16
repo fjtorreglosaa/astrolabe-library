@@ -1,7 +1,7 @@
 # Astrolabe Books — Global Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
 **Version:** 1
 
 ---
@@ -24,10 +24,11 @@ This is the **authoritative glossary**. Where a domain uses a term differently, 
 
 | Term | Definition |
 |---|---|
-| **Member** | A user holding a subscription plan. Their plan is their role: Basic, Plus, or Max |
+| **Member** | A user who borrows and buys. What they may reach is governed by their **plan**, which is held on their subscription and is a separate fact from their role |
+| **Role** | What a user is authorised to do: `Member`, `Admin`, or `Super administrator`. A role says nothing about what anyone bought. Until `GLOBAL-019` the three plan tiers lived here too, so a member's role doubled as their plan |
 | **Administrator** | A staff user who manages the specific libraries a super administrator has assigned to them. There is no separate "librarian" role |
 | **Super administrator** | A staff user with unrestricted access to the whole network, and the only role that can appoint administrators |
-| **Plan** | A subscription tier — Basic, Plus, or Max — governing catalogue access, borrowing reach, purchase discount, reward points, and AI recommendations |
+| **Plan** | A subscription tier — Basic, Plus, or Max — governing catalogue access, borrowing reach, purchase discount, reward points, and AI recommendations. Held on `Subscription.Plan`, which is its single authority; every consumer reads it through `IEntitlementProvider` |
 | **Tier** | A property **of a book**, not of a member. Values are Basic, Plus, and Max. A book is accessible when its tier is within the member's plan |
 | **Library** | A physical branch belonging to a city. Holds copies |
 | **Home library** | The single library a Basic member may borrow from. Assigned automatically from their city of residence |
