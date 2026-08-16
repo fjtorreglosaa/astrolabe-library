@@ -13,6 +13,7 @@ using Astrolabe.Domain.Features.Store.Entities;
 using Microsoft.EntityFrameworkCore;
 using Astrolabe.Domain.Features.Recommendations.Entities;
 using Astrolabe.Domain.Features.Notifications.Entities;
+using Astrolabe.Domain.Features.Support.Entities;
 
 namespace Astrolabe.Infrastructure.Persistence;
 
@@ -74,6 +75,8 @@ public sealed class AstrolabeDbContext(
     public DbSet<RecommendationSet> RecommendationSets => Set<RecommendationSet>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<Ticket> Tickets => Set<Ticket>();
 
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
 

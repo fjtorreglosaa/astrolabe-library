@@ -1,91 +1,72 @@
 # Support — Technical Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
-**Version:** 0 — placeholder, authored during PLAN-001 Stage 9
-**Implements:** *to be listed once `support.business.md` defines its `BR-SUP-*` rules*
-
-> **PLACEHOLDER.** This file carries every required section with guidance on what belongs in each.
-> It is authored **after** `support.business.md`, per SDD+ Principle 2 — you cannot make a good
-> technical decision without understanding the business rule it implements.
-
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
+**Version:** 1 — authored at the start of PLAN-001 Stage 9
+**Implements:** `BR-SUP-001` to `BR-SUP-012`
 
 ---
 
 ## 1. Domain Model
 
-Aggregates, entities, value objects, and domain events. Include **code signatures, not full
-implementations** — a spec describes shape, not body. Explain why each aggregate boundary was drawn
-where it is.
+### `Ticket` — aggregate root
 
-*To be authored.*
+```csharp
+public sealed class Ticket : AggregateRoot
+{
+    public string Reference { get; }              // TCK-NNNN, BR-SUP-001
+    public Guid MemberId { get; }
+    public TicketCategory Category { get; }
+    public Guid LibraryId { get; }                // BR-SUP-009
+    public string Subject { get; }
+    public TicketStatus Status { get; }
+    public Guid? AgentUserId { get; }
+    public int? Rating { get; }                   // BR-SUP-006
+    public string? Review { get; }
+    public IReadOnlyList<TicketMessage> Messages { get; }
+
+    public static Result<Ticket> Open(...);
+    public Result Assign(Guid agentUserId, DateTimeOffset now);   // BR-SUP-003
+    public Result Reply(Guid authorId, TicketAuthor author, string text, DateTimeOffset now);
+    public Result Resolve(DateTimeOffset now);
+    public Result Reopen(DateTimeOffset now);                     // BR-SUP-007
+    public Result Rate(int stars, string? review);                // BR-SUP-005
+}
+```
+
+The conversation is **owned**, not a separate aggregate: a message has no life without its ticket and
+is never queried alone, and the transition rules read the message list to decide.
+
+### Enumerations
+
+`TicketStatus` — `Created`, `InReview`, `Resolved`.
+`TicketCategory` — the prototype's five, verbatim.
+`TicketAuthor` — `Member`, `Agent`.
 
 ---
 
 ## 2. Application Layer
 
-Every command and query this domain exposes, one entry each:
-
 ```text
-Name:             {CommandName / QueryName}
-Type:             Command / Query
-Input:            {parameters}
-Output:           Result / Result<T>
-Business rule:    BR-SUP-{NNN}
-Handler location: {file path}
+OpenTicketCommand        → Result<TicketDto>    BR-SUP-001, BR-SUP-009
+ReplyToTicketCommand     → Result               BR-SUP-008, BR-SUP-011, BR-SUP-012
+AssignTicketCommand      → Result               BR-SUP-003, BR-SUP-010
+ResolveTicketCommand     → Result               BR-SUP-002
+ReopenTicketCommand      → Result               BR-SUP-007
+RateTicketCommand        → Result               BR-SUP-005, BR-SUP-006
+GetMyTicketsQuery        → Result<Paged<...>>   BR-SUP-004
+GetTicketQuery           → Result<TicketDto>    BR-SUP-004
+SearchTicketsQuery       → Result<Paged<...>>   BR-SUP-010  (staff)
 ```
 
-Conventions, per `global_tech_spec.md` §3: commands return `Task<Result>`, queries return
-`Task<Result<T>>`, validation runs **inside the handler**, dispatch is through `ISender`, and
-`CancellationToken` is the last parameter and is propagated everywhere.
-
-*To be authored.*
-
 ---
 
-## 3. Infrastructure
-
-Repository interfaces, EF Core configurations, and external service clients, and how each connects to
-the domain model. Fluent API only — no data annotations on domain entities.
-
-*To be authored.*
-
----
-
-## 4. Architecture Decision Log
-
-Per SDD+ §5.2 this file **is** the ADR collection for this domain. Every entry must carry rejected
-alternatives — a decision without them is not a decision, it is a default.
+## 3. Architecture Decision Log
 
 | Decision | Choice | Rationale | Alternatives rejected |
 |---|---|---|---|
-| *To be authored.* | | | |
-
----
-
-## 5. Dependencies
-
-**This domain depends on:** *to be authored.*
-
-**Domains that depend on this one:** *to be authored.*
-
-**External services:** *to be authored, with justification.*
-
----
-
-## 6. Known Constraints and Limitations
-
-Technical debt, known issues, and intentional simplifications with their justification.
-
-*To be authored.*
-
----
-
-## 7. Superseded Decisions
-
-Decisions that changed. Record the old decision, the reason for the change, and the date.
-**Never delete — always move here.**
-
-| Decision | Superseded by | Reason | Date |
-|---|---|---|---|
-| — | — | None yet | — |
+| Messages owned by the ticket | Owned collection | A message has no meaning alone and is never queried without its ticket, and the transitions read the list to decide. A separate aggregate would need a transaction across two to append one line | A `Message` aggregate — rejected: two aggregates for one conversation |
+| Reference format | `TCK-` plus a sequence | Transcribed from the prototype, and it is what a member quotes on the phone. A GUID is unreadable aloud | A GUID as the public identifier — rejected: unusable in the one place it is most needed |
+| Reopening clears the rating | Yes, by `BR-SUP-007` | The rating answers "did we help", and reopening says the answer was no. Keeping a five-star rating on a reopened ticket would report satisfaction that was withdrawn | Keeping it — rejected: it makes the metric lie |
+| Notifying on reply | A domain event handler in `notifications` | `BR-SUP-012` is a consequence, not a step. A reply must not fail because a notification did | Raising it inline — rejected: couples an answer to a message about it |
+| Staff scope | `ILibraryScopeProvider`, by the ticket's library | `BR-SUP-010`, and it reuses the seam every other domain uses rather than inventing a second definition of scope | Scoping by the member's city — rejected: a ticket is about a library, and the rule says so |

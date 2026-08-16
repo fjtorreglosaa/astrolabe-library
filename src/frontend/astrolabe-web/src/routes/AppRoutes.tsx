@@ -23,6 +23,7 @@ import { AcceptInvitationPage } from '../features/network/pages/AcceptInvitation
 import { AiRecommendationsPage } from '../features/recommendations/pages/AiRecommendationsPage';
 import { AdminAiSettingsPage } from '../features/recommendations/pages/AdminAiSettingsPage';
 import { NotificationSettingsPage } from '../features/notifications/pages/NotificationSettingsPage';
+import { SupportPage } from '../features/support/pages/SupportPage';
 
 /**
  * The route table.
@@ -47,7 +48,7 @@ export const AppRoutes = () => (
         <Route path="/loans" element={<LoansPage />} />
         <Route path="/fines" element={<FinesPage />} />
         <Route path="/purchases" element={<PurchasesPage />} />
-        <Route path="/support" element={<PlaceholderScreen title="Help & support" stage="Stage 9" />} />
+        <Route path="/support" element={<SupportPage />} />
         <Route path="/profile" element={<PlaceholderScreen title="My profile" stage="Stage 2" />} />
         <Route path="/settings" element={<PlaceholderScreen title="Settings" stage="Stage 2" />} />
         <Route path="/settings/devices" element={<DevicesAndSessionsPage />} />
@@ -63,7 +64,7 @@ export const AppRoutes = () => (
           <Route path="/admin/books" element={<AdminBooksPage />} />
           <Route path="/admin/payments" element={<AdminPaymentsPage />} />
           <Route path="/admin/ai" element={<AdminAiSettingsPage />} />
-          <Route path="/admin/support" element={<PlaceholderScreen title="Support tickets" stage="Stage 9" />} />
+          <Route path="/admin/support" element={<SupportPage />} />
         </Route>
 
         <Route element={<RoleGuard allow={SuperAdminRoles} />}>

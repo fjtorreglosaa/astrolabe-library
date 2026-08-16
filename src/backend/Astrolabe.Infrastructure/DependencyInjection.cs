@@ -42,6 +42,8 @@ using Astrolabe.Application.Abstractions.Notifications;
 using Astrolabe.Domain.Features.Notifications.Repositories;
 using Astrolabe.Infrastructure.Features.Notifications;
 using Astrolabe.Infrastructure.Persistence.Repositories.Notifications;
+using Astrolabe.Domain.Features.Support.Repositories;
+using Astrolabe.Infrastructure.Persistence.Repositories.Support;
 
 namespace Astrolabe.Infrastructure;
 
@@ -139,6 +141,8 @@ public static class DependencyInjection
         services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
         services.AddScoped<INotificationsUnitOfWork, NotificationsUnitOfWork>();
         services.AddScoped<INotificationRaiser, NotificationRaiser>();
+        services.AddScoped<ITicketRepository, TicketRepository>();
+        services.AddScoped<ISupportUnitOfWork, SupportUnitOfWork>();
         services.AddScoped<IAuditUnitOfWork, AuditUnitOfWork>();
         services.AddScoped<IReservationUnitOfWork, ReservationUnitOfWork>();
         services.AddScoped<IBillingUnitOfWork, BillingUnitOfWork>();

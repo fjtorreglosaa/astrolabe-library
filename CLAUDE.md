@@ -332,7 +332,7 @@ aggregate root, not before.
 | 6 | Administration surfaces | ✅ Done — user directory, book management, libraries and admins |
 | 7 | `recommendations` | ✅ Done — 18/18 |
 | 8 | Hardening and acceptance | ⬜ Not started — must run last |
-| 9 | `support`, `notifications` | 🔄 `notifications` done; `support` not started |
+| 9 | `support`, `notifications` | ✅ Done — 12/12 and 12/12 |
 
 Open decisions awaiting the user:
 

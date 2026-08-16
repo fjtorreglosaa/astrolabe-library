@@ -1,94 +1,88 @@
 # Support — Business Specification
 
-**Last reviewed:** 2026-08-15
-**Reviewed by:** Francisco Torregrosa
-**Version:** 0 — placeholder, authored during PLAN-001 Stage 9
+**Last reviewed:** 2026-08-16
+**Reviewed by:** AI Agent — Claude — 2026-08-16
+**Version:** 1 — authored at the start of PLAN-001 Stage 9
 **Ring:** Phase 2
-
-> **PLACEHOLDER.** This file carries every required section with guidance on what belongs in each.
-> It is filled in at the start of PLAN-001 Stage 9, before any implementation in this domain.
-> The product authority is the prototype in `docs/design/` — read `prototype.source.js` for the real
-> rules, exact copy, and seed data. Do not invent product behaviour.
-
 
 ---
 
 ## 1. Purpose
 
-Owns member support requests and the conversation around them: raising a ticket, assigning it to a staff member, answering it, resolving it, and rating the service. It answers "what went wrong for this member, and who is fixing it".
+Owns support tickets: a member's question, the conversation that answers it, and what they thought of
+the answer.
+
+It answers *"who asked what, who is handling it, and did we help"*.
 
 ---
 
 ## 2. Glossary
 
-Terms specific to this domain. Where a term means something different here than in
-`global_spec.md`, that difference must be stated explicitly.
-
 | Term | Definition |
 |---|---|
-| **Ticket** | A support request raised by a member against a library |
-| **Category** | The classification chosen when the ticket is raised |
-| **Agent** | The staff member handling a ticket. **In `recommendations`, "agent" means a prompt template. The two meanings are unrelated** |
-| **Owner** | The agent currently assigned to a ticket |
-| **Service rating** | The member's score and optional written review of how the ticket was handled |
+| **Ticket** | One member's issue, with an identifier of the form `TCK-NNNN` |
+| **Agent** | The staff member handling a ticket. **In `recommendations`, "agent" is a prompt template. The two meanings are unrelated** |
+| **Message** | One entry in the conversation, from the member or the agent |
+| **Category** | What the ticket is about, from a closed list of five |
+| **Rating** | One to five stars, given by the member when a ticket is resolved |
 
 ---
 
 ## 3. Business Rules
 
-Numbered `BR-SUP-{NNN}`. Each rule must be a complete, unambiguous, independently testable
-statement. Use "must", never "should". A rule that does not fit in one sentence is probably two rules.
-**An ID never changes**, even when the rule text does.
-
 | ID | Rule |
 |---|---|
-| `BR-SUP-001` | *To be authored.* |
-
-Rules this domain is expected to define:
-
-- The available categories
-- The ticket state machine, including reopening
-- Who may assign, answer, and resolve a ticket
-- That staff only see tickets for libraries in their scope
-- When a member may rate the service, and what the rating attaches to
-- What notifications each transition produces
+| `BR-SUP-001` | A ticket must belong to exactly one member and carry exactly one category from the closed list |
+| `BR-SUP-002` | A ticket must move only `Created → InReview → Resolved`, and may be reopened from `Resolved` back to `InReview` |
+| `BR-SUP-003` | A ticket must have an agent before it enters `InReview`, and assigning one must move it there |
+| `BR-SUP-004` | Only the member who opened a ticket, and staff, may read it. No other member may, by any route |
+| `BR-SUP-005` | A member may rate a ticket only once it is `Resolved`, and only their own |
+| `BR-SUP-006` | A rating must be one to five stars. A written review is optional and may accompany it |
+| `BR-SUP-007` | Reopening must clear the rating, because the question it answered — "did we help" — is open again |
+| `BR-SUP-008` | Every message must record who wrote it and when, and must never be edited or deleted |
+| `BR-SUP-009` | A ticket must record the library it concerns, so it can be routed to staff who can act on it |
+| `BR-SUP-010` | Staff may only see tickets for libraries within their scope. A super administrator sees all |
+| `BR-SUP-011` | A resolved ticket must accept no new messages until it is reopened |
+| `BR-SUP-012` | Answering a member must notify them, through `notifications` |
 
 ---
 
 ## 4. Acceptance Criteria
 
-Numbered `AC-SUP-{NNN}`, each mapping to one or more business rules. These drive test definition.
-
 | ID | Criterion | Covers |
 |---|---|---|
-| `AC-SUP-001` | *To be authored.* | `BR-SUP-001` |
+| `AC-SUP-001` | A member opens a ticket, an agent is assigned, it moves to `InReview` | `BR-SUP-002`, `BR-SUP-003` |
+| `AC-SUP-002` | Another member cannot read that ticket by any route | `BR-SUP-004` |
+| `AC-SUP-003` | An administrator sees tickets for their libraries and no others | `BR-SUP-010` |
+| `AC-SUP-004` | Rating before resolution is refused; after it, accepted once | `BR-SUP-005` |
+| `AC-SUP-005` | Reopening clears the rating and admits messages again | `BR-SUP-007`, `BR-SUP-011` |
+| `AC-SUP-006` | An agent reply produces a `Support` notification for the member | `BR-SUP-012` |
 
 ---
 
 ## 5. Edge Cases
 
-Non-obvious scenarios and their expected behaviour. This section is where most defects are prevented.
-
 | Scenario | Expected behaviour |
 |---|---|
-| *To be authored.* | |
+| The member replies to their own resolved ticket | Refused by `BR-SUP-011`. Reopening is the deliberate act, and letting a reply do it silently would reopen tickets nobody meant to |
+| A ticket's library is withdrawn | The ticket stays and stays readable. `BR-NET-005` preserves history, and a member's unanswered question is history |
+| An agent is revoked while holding tickets | The tickets keep their agent's name. Reassignment is a separate act, and blanking the name would lose who answered |
+| A member rates, then the ticket is reopened and resolved again | They may rate again. `BR-SUP-007` cleared the first, so this is a first rating of the second resolution |
+| A member opens two tickets about the same thing | Both exist. Deduplicating would need judgement no rule supplies |
 
 ---
 
 ## 6. Out of Scope
 
-Explicitly **not** handled by this domain. This section is as important as what the domain does handle —
-ambiguity about boundaries is the most common source of domain conflicts.
-
-- Live chat and telephone support
-- Service level agreements and escalation timers
-- A public knowledge base beyond the static questions shown before ticket creation
+- Service level agreements, response time targets and escalation
+- Email replies. The conversation lives in the product
+- Attachments of any kind
+- Internal notes invisible to the member. Every message here is part of the conversation
 
 ---
 
 ## 7. Prototype Reference
 
-Screens: `support` (Help and support) and `admin-support` (Support tickets)
-
-Read `docs/design/prototype.source.js` for the authoritative rules, copy, and seed data.
-Read `docs/design/prototype.text-outline.txt` to locate a screen or string quickly.
+The `support` and `admin-support` screens. Statuses `Created`, `In review` and `Resolved`, the five
+categories, and the rating with its written review are transcribed from `TICKET_STATUS`,
+`TICKET_CATS` and `TICKETS_SEED`.
