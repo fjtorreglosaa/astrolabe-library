@@ -1,8 +1,8 @@
-using Astrolabe.Domain.Features.Identity.Entities;
-using Astrolabe.Domain.Features.Identity.Repositories;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace Astrolabe.Infrastructure.Persistence.Repositories.Identity;
+namespace Astrolabe.Infrastructure.Persistence.Repositories.Audit;
 
 public sealed class AuditRepository(AstrolabeDbContext context)
     : Repository<AuditEntry>(context), IAuditRepository

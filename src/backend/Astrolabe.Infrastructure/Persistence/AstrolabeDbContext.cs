@@ -2,7 +2,10 @@ using System.Reflection;
 using Astrolabe.Application.Abstractions.Events;
 using Astrolabe.Domain.Abstractions;
 using Astrolabe.Domain.Abstractions.Persistence;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Catalog.Entities;
 using Astrolabe.Domain.Features.Identity.Entities;
+using Astrolabe.Domain.Features.Membership.Entities;
 using Astrolabe.Domain.Features.Network.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,6 +43,14 @@ public sealed class AstrolabeDbContext(
     public DbSet<SingleUseToken> SingleUseTokens => Set<SingleUseToken>();
 
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+
+    public DbSet<Book> Books => Set<Book>();
+
+    public DbSet<BookCopy> BookCopies => Set<BookCopy>();
+
+    public DbSet<Review> Reviews => Set<Review>();
 
     /// <summary>
     /// Commits, then publishes whatever the aggregates raised.

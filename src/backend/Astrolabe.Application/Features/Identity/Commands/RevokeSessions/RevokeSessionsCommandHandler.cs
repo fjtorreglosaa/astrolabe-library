@@ -1,6 +1,8 @@
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
@@ -10,6 +12,7 @@ using Astrolabe.Domain.Primitives;
 namespace Astrolabe.Application.Features.Identity.Commands.RevokeSessions;
 
 public sealed class RevokeSessionsCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     ICurrentUser currentUser,
     IDateTimeProvider clock) : ICommandHandler<RevokeSessionsCommand, int>
 {
@@ -45,7 +48,7 @@ public sealed class RevokeSessionsCommandHandler(IIdentityUnitOfWork identity,
 
         var revoked = targets.Count;
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "identity.sessions_revoked", now, actorUserId: userId, subjectUserId: userId,
                 detail: $"{request.Scope}: {revoked} session(s)."),

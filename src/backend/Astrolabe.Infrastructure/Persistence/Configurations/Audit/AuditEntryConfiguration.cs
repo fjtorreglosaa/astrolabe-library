@@ -1,8 +1,8 @@
-using Astrolabe.Domain.Features.Identity.Entities;
+using Astrolabe.Domain.Features.Audit.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Astrolabe.Infrastructure.Persistence.Configurations.Identity;
+namespace Astrolabe.Infrastructure.Persistence.Configurations.Audit;
 
 public sealed class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEntry>
 {

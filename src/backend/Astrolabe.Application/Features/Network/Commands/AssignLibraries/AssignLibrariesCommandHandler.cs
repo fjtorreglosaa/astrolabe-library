@@ -1,6 +1,8 @@
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Repositories;
@@ -13,6 +15,7 @@ namespace Astrolabe.Application.Features.Network.Commands.AssignLibraries;
 
 public sealed class AssignLibrariesCommandHandler(
     IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     INetworkUnitOfWork network,
     ICurrentUser currentUser,
     IDateTimeProvider clock) : ICommandHandler<AssignLibrariesCommand>
@@ -70,7 +73,7 @@ public sealed class AssignLibrariesCommandHandler(
             added++;
         }
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "network.libraries_assigned", now, actorUserId: actorId, subjectUserId: request.UserId,
                 detail: $"{added} granted, {removed} revoked."),

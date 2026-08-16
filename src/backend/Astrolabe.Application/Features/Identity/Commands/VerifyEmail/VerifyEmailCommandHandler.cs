@@ -1,5 +1,7 @@
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
@@ -10,6 +12,7 @@ using Astrolabe.Domain.Primitives;
 namespace Astrolabe.Application.Features.Identity.Commands.VerifyEmail;
 
 public sealed class VerifyEmailCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     IDateTimeProvider clock) : ICommandHandler<VerifyEmailCommand>
 {
     public async Task<Result> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
@@ -54,7 +57,7 @@ public sealed class VerifyEmailCommandHandler(IIdentityUnitOfWork identity,
             return verified;
         }
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record("identity.email_verified", now, subjectUserId: user.Id),
             cancellationToken);
 

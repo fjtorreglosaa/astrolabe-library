@@ -1,7 +1,7 @@
 using Astrolabe.Domain.Abstractions.Persistence;
-using Astrolabe.Domain.Features.Identity.Entities;
+using Astrolabe.Domain.Features.Audit.Entities;
 
-namespace Astrolabe.Domain.Features.Identity.Repositories;
+namespace Astrolabe.Domain.Features.Audit.Repositories;
 
 /// <summary>
 /// Persistence for <see cref="AuditEntry"/>. Append-only by design: the contract exposes no way to

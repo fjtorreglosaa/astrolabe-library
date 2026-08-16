@@ -1,6 +1,8 @@
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
@@ -10,6 +12,7 @@ using Astrolabe.Domain.Primitives;
 namespace Astrolabe.Application.Features.Identity.Commands.SignOut;
 
 public sealed class SignOutCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     ICurrentUser currentUser,
     IDateTimeProvider clock) : ICommandHandler<SignOutCommand>
 {
@@ -31,7 +34,7 @@ public sealed class SignOutCommandHandler(IIdentityUnitOfWork identity,
 
         session.Revoke(SessionRevocationReason.SignedOut, now);
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record("identity.signed_out", now, actorUserId: userId, subjectUserId: userId),
             cancellationToken);
 

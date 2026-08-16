@@ -61,6 +61,24 @@ Never invent product behaviour. The real rules, copy, and seed data are in
   each handler
 - A feature contains only Commands, Queries and Events — no Services, Helpers or Common folders
 
+## Verify against the running system
+
+A green test suite is not evidence that a feature works. Exercise the endpoint before calling a task
+done. Two Stage 2 defects passed every unit test and were found only with `curl`: a value converter
+that broke catalogue search, and a seeder projection that crashed the API at startup.
+
+## Persisting value objects
+
+- Map a value object as an **owned type** (class) or **complex type** (struct, such as `Money`),
+  never with a value converter, when any of its members is read, filtered, ordered or aggregated in
+  a query. A converter makes `book.Isbn.Value` untranslatable — it compiles and throws at run time
+
+## Audit
+
+- `AuditEntry` lives under `Domain/Features/Audit/`, reached through `IAuditUnitOfWork`. Never inject
+  `IIdentityUnitOfWork` just to write an audit row
+- Write the entry inside the command handler, in the same transaction. Never in an event handler
+
 ## Do not suggest
 
 - Magic numbers or hardcoded configuration values
@@ -75,6 +93,8 @@ Never invent product behaviour. The real rules, copy, and seed data are in
 - Nullable reference type suppressions (`!`) without a comment explaining why
 - Architectural patterns not described in `global_tech_spec.md`
 - Secrets, API keys, or connection strings in committed files
+- A value converter on a value object whose members are filtered, projected or aggregated on
+- A date rendered to a member without an explicit time zone
 
 ## Committing
 

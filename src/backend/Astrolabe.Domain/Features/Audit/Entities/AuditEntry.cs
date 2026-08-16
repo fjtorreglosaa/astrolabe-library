@@ -1,6 +1,6 @@
 using Astrolabe.Domain.Abstractions;
 
-namespace Astrolabe.Domain.Features.Identity.Entities;
+namespace Astrolabe.Domain.Features.Audit.Entities;
 
 /// <summary>
 /// An append-only record of a security-relevant event. Implements BR-IDN-032 and BR-IDN-033.

@@ -3,6 +3,8 @@ using Astrolabe.Application.Abstractions.Mail;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Application.Shared.Mail;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Errors;
 using Astrolabe.Domain.Features.Identity.ValueObjects;
@@ -14,6 +16,7 @@ using Microsoft.Extensions.Logging;
 namespace Astrolabe.Application.Features.Identity.Commands.Register;
 
 public sealed class RegisterCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     INetworkUnitOfWork network,
     IPasswordHasher passwordHasher,
     ITokenGenerator tokenGenerator,
@@ -73,7 +76,7 @@ public sealed class RegisterCommandHandler(IIdentityUnitOfWork identity,
                 user.Value.Id, SecretHash.FromPlaintext(plaintext), now),
             cancellationToken);
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record("identity.registered", now, subjectUserId: user.Value.Id),
             cancellationToken);
 
@@ -98,7 +101,7 @@ public sealed class RegisterCommandHandler(IIdentityUnitOfWork identity,
     private async Task NotifyExistingAccountAsync(
         User existing, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "identity.duplicate_registration_attempt", now, subjectUserId: existing.Id),
             cancellationToken);

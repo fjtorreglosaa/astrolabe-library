@@ -7,6 +7,8 @@ import { VerifyEmailPage } from '../features/auth/pages/VerifyEmailPage';
 import { DevicesAndSessionsPage } from '../features/sessions/pages/DevicesAndSessionsPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
+import { CatalogPage } from '../features/catalog/pages/CatalogPage';
+import { MembershipPage } from '../features/membership/pages/MembershipPage';
 import { PlaceholderScreen } from '../shared/components/PlaceholderScreen';
 
 /**
@@ -28,7 +30,7 @@ export const AppRoutes = () => (
     <Route element={<ProtectedRoute />}>
       <Route element={<AppLayout />}>
         <Route path="/home" element={<PlaceholderScreen title="Home" stage="Stage 3" />} />
-        <Route path="/catalog" element={<PlaceholderScreen title="Catalog" stage="Stage 2" />} />
+        <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/loans" element={<PlaceholderScreen title="Book Reservations" stage="Stage 3" />} />
         <Route path="/fines" element={<PlaceholderScreen title="Fines & payments" stage="Stage 4" />} />
         <Route path="/purchases" element={<PlaceholderScreen title="My purchases" stage="Stage 5" />} />
@@ -36,6 +38,7 @@ export const AppRoutes = () => (
         <Route path="/profile" element={<PlaceholderScreen title="My profile" stage="Stage 2" />} />
         <Route path="/settings" element={<PlaceholderScreen title="Settings" stage="Stage 2" />} />
         <Route path="/settings/devices" element={<DevicesAndSessionsPage />} />
+        <Route path="/settings/membership" element={<MembershipPage />} />
 
         <Route element={<RoleGuard allow={PaidPlanRoles} />}>
           <Route path="/ai" element={<PlaceholderScreen title="AI recommendations" stage="Stage 7" />} />

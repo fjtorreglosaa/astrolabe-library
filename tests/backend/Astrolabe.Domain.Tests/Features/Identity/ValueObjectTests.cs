@@ -1,3 +1,5 @@
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;

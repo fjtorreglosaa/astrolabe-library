@@ -3,6 +3,8 @@ using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Application.Contracts.Identity;
 using Astrolabe.Domain.Abstractions;
 using Astrolabe.Domain.Abstractions.Persistence;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
@@ -14,6 +16,7 @@ using Astrolabe.Domain.Primitives;
 namespace Astrolabe.Application.Features.Identity.Commands.RefreshToken;
 
 public sealed class RefreshTokenCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     ITokenGenerator tokenGenerator,
     IDateTimeProvider clock) : ICommandHandler<RefreshTokenCommand, TokenPair>
 {
@@ -97,7 +100,7 @@ public sealed class RefreshTokenCommandHandler(IIdentityUnitOfWork identity,
         {
             // The aggregate already revoked the session, which raises SessionRevoked; its handler
             // evicts from the cache. Only the audit trail is this handler's business.
-            await identity.Audit.AddAsync(
+            await audit.Entries.AddAsync(
                 AuditEntry.Record(
                     "identity.refresh_token_reuse_detected", now,
                     subjectUserId: session.UserId, ipAddress: ipAddress,

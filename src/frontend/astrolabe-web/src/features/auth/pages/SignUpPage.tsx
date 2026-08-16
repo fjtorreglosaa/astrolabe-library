@@ -24,9 +24,9 @@ import { register as registerAccount } from '../api/authApi';
 
 /** Plan codes as the API expects them, with the prototype's copy. */
 const PLANS = [
-  { code: 0, name: 'Basic', price: '$0', per: '/ month', bullets: ['Borrowing at 1 library of your choice', 'Titles included in the Basic catalog', 'No purchase discounts'] },
-  { code: 1, name: 'Plus', price: '$6.99', per: '/ month', bullets: ['Borrowing at every library in your city', 'Full catalog with no restrictions', 'Purchase discounts within your city'] },
-  { code: 2, name: 'Max', price: '$12.99', per: '/ month', bullets: ['Borrowing at every library on the platform', 'Purchase discounts in every city', 'Points on every purchase'] },
+  { code: 'Basic', name: 'Basic', price: '$0', per: '/ month', bullets: ['Borrowing at 1 library of your choice', 'Titles included in the Basic catalog', 'No purchase discounts'] },
+  { code: 'Plus', name: 'Plus', price: '$6.99', per: '/ month', bullets: ['Borrowing at every library in your city', 'Full catalog with no restrictions', 'Purchase discounts within your city'] },
+  { code: 'Max', name: 'Max', price: '$12.99', per: '/ month', bullets: ['Borrowing at every library on the platform', 'Purchase discounts in every city', 'Points on every purchase'] },
 ] as const;
 
 const schema = z.object({
@@ -36,7 +36,7 @@ const schema = z.object({
   password: z.string().min(12, 'Use at least 12 characters.'),
   countryId: z.string().min(1, 'Choose your country.'),
   cityId: z.string().min(1, 'Choose your city.'),
-  plan: z.number(),
+  plan: z.enum(['Basic', 'Plus', 'Max']),
   acceptedTerms: z.literal(true, { message: 'You must accept the terms to continue.' }),
 });
 
@@ -49,7 +49,7 @@ export const SignUpPage = () => {
   const { control, register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } =
     useForm<FormValues>({
       resolver: zodResolver(schema),
-      defaultValues: { fullName: '', email: '', password: '', countryId: '', cityId: '', plan: 0 },
+      defaultValues: { fullName: '', email: '', password: '', countryId: '', cityId: '', plan: 'Basic' },
     });
 
   const countryId = watch('countryId');

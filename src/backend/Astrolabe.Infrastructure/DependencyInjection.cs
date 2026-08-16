@@ -1,17 +1,25 @@
 using Astrolabe.Application.Abstractions.Mail;
 using Astrolabe.Application.Abstractions.Events;
 using Astrolabe.Application.Abstractions.Identity;
+using Astrolabe.Application.Abstractions.Membership;
 using Astrolabe.Application.Abstractions.Network;
 using Astrolabe.Domain.Abstractions;
 using Astrolabe.Domain.Abstractions.Persistence;
 using Astrolabe.Infrastructure.Integrations.Mail;
 using Astrolabe.Infrastructure.Features.Identity;
+using Astrolabe.Infrastructure.Features.Membership;
 using Astrolabe.Infrastructure.Features.Network;
+using Astrolabe.Domain.Features.Audit.Repositories;
+using Astrolabe.Domain.Features.Catalog.Repositories;
 using Astrolabe.Domain.Features.Identity.Repositories;
+using Astrolabe.Domain.Features.Membership.Repositories;
 using Astrolabe.Domain.Features.Network.Repositories;
 using Astrolabe.Infrastructure.Persistence;
 using Astrolabe.Infrastructure.Persistence.Repositories;
+using Astrolabe.Infrastructure.Persistence.Repositories.Audit;
+using Astrolabe.Infrastructure.Persistence.Repositories.Catalog;
 using Astrolabe.Infrastructure.Persistence.Repositories.Identity;
+using Astrolabe.Infrastructure.Persistence.Repositories.Membership;
 using Astrolabe.Infrastructure.Persistence.Repositories.Network;
 using Astrolabe.Infrastructure.Persistence.Seeding;
 using Astrolabe.Infrastructure.Time;
@@ -46,10 +54,20 @@ public static class DependencyInjection
         services.AddIdentityServices(configuration);
         services.AddScoped<NetworkSeeder>();
         services.AddScoped<DemoAccountSeeder>();
+        services.AddScoped<MembershipSeeder>();
+        services.AddScoped<CatalogSeeder>();
 
         // Scoped so the memoised scope dies with the request. BR-NET-011 requires a revoked
         // assignment to take effect on the next request.
         services.AddScoped<ILibraryScopeProvider, LibraryScopeProvider>();
+        services.AddScoped<IEntitlementProvider, EntitlementProvider>();
+
+        // BR-MBR-021 needs both mechanisms: the provider applies a due change on read, this sweeps
+        // the members who never sign in. Both call the same idempotent method.
+        services.Configure<PlanRenewalOptions>(
+            configuration.GetSection(PlanRenewalOptions.SectionName));
+        services.AddHostedService<ApplyDuePlanChangesJob>();
+        services.AddScoped<ILibraryLocationProvider, LibraryLocationProvider>();
 
         // Placeholder until catalog, reservations and billing exist. See NET-025.
         services.AddScoped<ILibraryObligationsProbe, UnimplementedLibraryObligationsProbe>();
@@ -73,6 +91,13 @@ public static class DependencyInjection
         // request's change tracker and a single SaveChangesAsync commits them atomically.
         services.AddScoped<IIdentityUnitOfWork, IdentityUnitOfWork>();
         services.AddScoped<INetworkUnitOfWork, NetworkUnitOfWork>();
+        services.AddScoped<IMembershipUnitOfWork, MembershipUnitOfWork>();
+        services.AddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
+        services.AddScoped<IAuditUnitOfWork, AuditUnitOfWork>();
+
+        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+        services.AddScoped<IBookRepository, BookRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
 
         services.AddScoped<ICountryRepository, CountryRepository>();
         services.AddScoped<ICityRepository, CityRepository>();

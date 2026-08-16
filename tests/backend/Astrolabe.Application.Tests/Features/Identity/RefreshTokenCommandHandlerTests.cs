@@ -2,6 +2,8 @@ using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Features.Identity.Commands.RefreshToken;
 using Astrolabe.Domain.Abstractions;
 using Astrolabe.Domain.Abstractions.Persistence;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
@@ -24,6 +26,7 @@ public sealed class RefreshTokenCommandHandlerTests
     private static readonly DateTimeOffset Now = new(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
 
     private IdentityUnitOfWorkMock _identity = null!;
+    private AuditUnitOfWorkMock _auditTrail = null!;
     private Mock<IUserSessionRepository> _sessions = null!;
     private Mock<IUserRepository> _users = null!;
     private Mock<ITokenGenerator> _tokenGenerator = null!;
@@ -35,9 +38,10 @@ public sealed class RefreshTokenCommandHandlerTests
     public void SetUp()
     {
         _identity = new IdentityUnitOfWorkMock();
+        _auditTrail = new AuditUnitOfWorkMock();
         _sessions = _identity.Sessions;
         _users = _identity.Users;
-        _audit = _identity.Audit;
+        _audit = _auditTrail.Entries;
         _tokenGenerator = new Mock<ITokenGenerator>();
 
         _tokenGenerator.SetupGet(t => t.AccessTokenLifetime).Returns(TimeSpan.FromMinutes(15));
@@ -48,7 +52,7 @@ public sealed class RefreshTokenCommandHandlerTests
     }
 
     private RefreshTokenCommandHandler CreateHandler() => new(
-        _identity.Object, _tokenGenerator.Object, new FixedClock(Now));
+        _identity.Object, _auditTrail.Object, _tokenGenerator.Object, new FixedClock(Now));
 
     private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
     {

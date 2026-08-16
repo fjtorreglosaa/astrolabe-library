@@ -1,6 +1,8 @@
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
@@ -11,6 +13,7 @@ using Astrolabe.Domain.Primitives;
 namespace Astrolabe.Application.Features.Identity.Commands.ResetPassword;
 
 public sealed class ResetPasswordCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     IPasswordHasher passwordHasher,
     IDateTimeProvider clock) : ICommandHandler<ResetPasswordCommand>
 {
@@ -74,7 +77,7 @@ public sealed class ResetPasswordCommandHandler(IIdentityUnitOfWork identity,
 
         var revoked = live.Count;
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "identity.password_reset", now, subjectUserId: user.Id,
                 detail: $"{revoked} session(s) revoked."),

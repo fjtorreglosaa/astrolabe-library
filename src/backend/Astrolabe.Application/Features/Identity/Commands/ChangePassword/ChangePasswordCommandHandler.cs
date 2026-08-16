@@ -1,6 +1,8 @@
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Errors;
@@ -10,6 +12,7 @@ using Astrolabe.Domain.Primitives;
 namespace Astrolabe.Application.Features.Identity.Commands.ChangePassword;
 
 public sealed class ChangePasswordCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     ICurrentUser currentUser,
     IPasswordHasher passwordHasher,
     IDateTimeProvider clock) : ICommandHandler<ChangePasswordCommand>
@@ -61,7 +64,7 @@ public sealed class ChangePasswordCommandHandler(IIdentityUnitOfWork identity,
 
         var revoked = others.Count;
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "identity.password_changed", now, actorUserId: userId, subjectUserId: userId,
                 detail: $"{revoked} other session(s) revoked."),

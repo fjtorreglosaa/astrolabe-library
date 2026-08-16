@@ -75,8 +75,14 @@ Every member holds exactly one active plan. Plans are the central business rule 
 Rules:
 
 * A member's **home library** is assigned automatically from their city of residence.
-* Plan changes take effect immediately and must be recorded in a subscription history.
-* Downgrading must never retroactively invalidate reservations already in progress.
+* Every plan may **browse** the entire network. Reach restricts borrowing, never discovery.
+* An **upgrade takes effect immediately** and is **prorated**: the member is charged for the new plan over the days left in the cycle, credited for the days already paid, and never pays twice for the same period. The amount due is never negative.
+* A **downgrade is scheduled, not applied**. The current plan runs until the renewal date and the new plan starts then. Nothing is charged and nothing is refunded. The member may cancel it until it lands.
+* Before a downgrade is confirmed the member must be shown what they lose: points ceasing to accrue and to be redeemable when leaving Max, and borrowing narrowing plus AI turning off when moving to Basic.
+* A billing cycle is anchored to the day of the month the subscription started — anniversary billing, not a calendar day shared by everyone. When that day does not exist in the renewal month, the cycle renews on the last day of that month and returns to its anchor afterwards.
+* A member may change their city of residence once per billing cycle.
+* Every change is recorded in a subscription history.
+* A plan change must never retroactively invalidate reservations already in progress, in either direction.
 * Reward points already earned are not destroyed by a downgrade, but they may only be redeemed while the active plan is Max.
 
 ## 3.3 Book Catalogue
@@ -662,6 +668,28 @@ Specific repositories should exist when they represent meaningful persistence ab
 
 ---
 
+# 14.1 Persisting Value Objects
+
+**Map a value object as an owned type, not with a value converter**, whenever any of its members is
+ever read in a query.
+
+A value converter collapses the whole object into an opaque scalar. The provider then has no view of
+the members inside it, so `book.Isbn.Value` or `review.Rating.Stars` cannot be translated: the code
+compiles, every unit test passes, and the query fails at run time. That is exactly what happened to
+catalogue search and to the rating average in Stage 2, and it reached the running system because
+nothing before it had ever queried through a converted type.
+
+An owned type produces the same single column and keeps its members queryable, so it is the default
+for a value object that is a **class**. For one that is a **struct** — `Money` is the case in this
+system — use `ComplexProperty` instead, which is the same idea for value types.
+
+A converter remains acceptable only for a value object that is never filtered, projected, ordered or
+aggregated on — and even then, the cost of being wrong is a run-time failure rather than a build one.
+This bit three times in Stage 2: `Isbn` broke catalogue search, `StarRating` broke the rating
+average, and `Money` broke ordering by price. Each compiled, and each passed every unit test.
+
+---
+
 # 15. Unit of Work
 
 A Unit of Work abstraction will control transactional persistence.
@@ -689,8 +717,39 @@ IUnitOfWork
     ExecuteInTransactionAsync()
 
 IIdentityUnitOfWork : IUnitOfWork
-    Users · Sessions · Tokens · Audit
+    Users · Sessions · Tokens
+
+IAuditUnitOfWork : IUnitOfWork
+    Entries
+
+INetworkUnitOfWork : IUnitOfWork
+    Countries · Cities · Libraries · Assignments · Invitations
+
+IMembershipUnitOfWork : IUnitOfWork
+    Subscriptions
+
+ICatalogUnitOfWork : IUnitOfWork
+    Books · Reviews
 ```
+
+**Audit is its own bounded context, not part of `identity`.** Four domains append to the trail and
+none of them owns it. While `AuditEntry` lived under identity, a `network` handler had to inject the
+whole `IIdentityUnitOfWork` — users, sessions and tokens — to write a single row, which is exactly
+the coupling a unit of work per context exists to prevent.
+
+Because every unit of work shares one `DbContext`, a handler that stages an entry through
+`IAuditUnitOfWork` and commits through its own unit of work still writes both in one transaction.
+That matters: `BR-CAT-025` and `BR-NET-017` require the entry, so it must not be able to go missing
+while the change it describes succeeds. **Write the audit entry inside the command handler, never in
+a domain event handler** — a reaction runs after the commit and may be lost, and a trail that can
+silently skip a transition is not a trail.
+
+**A handler that genuinely spans two contexts injects both units of work and wraps them in one
+transaction.** `ChangeCityOfResidenceCommandHandler` is the reference case: the city belongs to
+`identity` and the per-cycle allowance to `membership`, and saving them independently could spend a
+member's one move for the cycle without moving them. They share a single `DbContext`, so one
+`ExecuteInTransactionAsync` covers both saves. This is the exception, not the pattern — reach for it
+only when a partial write would leave the system in a state no rule describes.
 
 The implementation will use Entity Framework Core.
 

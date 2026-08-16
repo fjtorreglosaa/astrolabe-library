@@ -9,14 +9,11 @@ public sealed class IdentityUnitOfWork(
     AstrolabeDbContext context,
     IUserRepository users,
     IUserSessionRepository sessions,
-    ISingleUseTokenRepository tokens,
-    IAuditRepository audit) : UnitOfWorkBase(context), IIdentityUnitOfWork
+    ISingleUseTokenRepository tokens) : UnitOfWorkBase(context), IIdentityUnitOfWork
 {
     public IUserRepository Users { get; } = users;
 
     public IUserSessionRepository Sessions { get; } = sessions;
 
     public ISingleUseTokenRepository Tokens { get; } = tokens;
-
-    public IAuditRepository Audit { get; } = audit;
 }

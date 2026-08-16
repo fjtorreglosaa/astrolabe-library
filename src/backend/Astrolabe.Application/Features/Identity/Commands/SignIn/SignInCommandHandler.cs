@@ -2,6 +2,8 @@ using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Application.Contracts.Identity;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Errors;
 using Astrolabe.Domain.Features.Identity.ValueObjects;
@@ -11,6 +13,7 @@ using Astrolabe.Domain.Primitives;
 namespace Astrolabe.Application.Features.Identity.Commands.SignIn;
 
 public sealed class SignInCommandHandler(IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     IPasswordHasher passwordHasher,
     ITokenGenerator tokenGenerator,
     IDeviceParser deviceParser,
@@ -75,7 +78,7 @@ public sealed class SignInCommandHandler(IIdentityUnitOfWork identity,
 
         await identity.Sessions.AddAsync(session, cancellationToken);
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "identity.sign_in_succeeded", now,
                 actorUserId: user.Id, subjectUserId: user.Id,
@@ -94,7 +97,7 @@ public sealed class SignInCommandHandler(IIdentityUnitOfWork identity,
 
     private async Task RecordFailureAsync(
         Guid? userId, string? ipAddress, DateTimeOffset now, CancellationToken cancellationToken) =>
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record("identity.sign_in_failed", now, subjectUserId: userId, ipAddress: ipAddress),
             cancellationToken);
 }

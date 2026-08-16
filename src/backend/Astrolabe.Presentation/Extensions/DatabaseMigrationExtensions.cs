@@ -41,8 +41,13 @@ public static class DatabaseMigrationExtensions
     {
         using var scope = app.Services.CreateScope();
 
-        // Order matters: demo members resolve their city from the network seed.
+        // Order matters: demo members resolve their city from the network seed, and the
+        // membership backfill needs those members to exist before it can subscribe them.
         await scope.ServiceProvider.GetRequiredService<NetworkSeeder>().SeedAsync();
         await scope.ServiceProvider.GetRequiredService<DemoAccountSeeder>().SeedAsync();
+        await scope.ServiceProvider.GetRequiredService<MembershipSeeder>().SeedAsync();
+
+        // Books resolve their branches by name from the network seed, so it must have run.
+        await scope.ServiceProvider.GetRequiredService<CatalogSeeder>().SeedAsync();
     }
 }

@@ -1,6 +1,8 @@
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Errors;
 using Astrolabe.Domain.Features.Identity.Repositories;
@@ -14,6 +16,7 @@ namespace Astrolabe.Application.Features.Network.Commands.AcceptInvitation;
 
 public sealed class AcceptInvitationCommandHandler(
     IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     INetworkUnitOfWork network,
     IPasswordHasher passwordHasher,
     IDateTimeProvider clock) : ICommandHandler<AcceptInvitationCommand>
@@ -74,7 +77,7 @@ public sealed class AcceptInvitationCommandHandler(
                 cancellationToken);
         }
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "network.invitation_accepted", now, actorUserId: user.Id, subjectUserId: user.Id,
                 detail: $"{invitation.LibraryIds.Count} library assignment(s) granted."),

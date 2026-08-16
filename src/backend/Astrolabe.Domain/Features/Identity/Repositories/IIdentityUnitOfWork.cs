@@ -25,6 +25,4 @@ public interface IIdentityUnitOfWork : IUnitOfWork
     IUserSessionRepository Sessions { get; }
 
     ISingleUseTokenRepository Tokens { get; }
-
-    IAuditRepository Audit { get; }
 }

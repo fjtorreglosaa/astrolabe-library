@@ -315,6 +315,24 @@ public sealed class User : AggregateRoot
     /// <summary>Changes the role. Reserved to a super administrator, enforced by the handler.</summary>
     public void ChangeRole(UserRole role) => Role = role;
 
+    /// <summary>
+    /// Mirrors the member's subscription plan onto their role.
+    ///
+    /// Separate from <see cref="ChangeRole"/> although both assign the same field: this one is
+    /// driven by the membership domain and may only ever set a member plan, while that one is a
+    /// super administrator's act and may grant staff authority. Collapsing them would let a plan
+    /// change reach a code path allowed to make someone an administrator.
+    /// </summary>
+    public void ChangePlan(UserRole plan)
+    {
+        if (!plan.IsMember() || !Role.IsMember())
+        {
+            return;
+        }
+
+        Role = plan;
+    }
+
     /// <summary>Moves the member to another city of residence. Recalculates plan reach elsewhere.</summary>
     public void ChangeResidence(Guid countryId, Guid cityId)
     {

@@ -3,7 +3,6 @@ import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
 import { getDeviceId } from '../../../shared/api/deviceId';
 import {
   getCurrentUser,
-  roleFromCode,
   signIn as signInRequest,
   signOut as signOutRequest,
   type CurrentUser,
@@ -55,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo<AuthContextValue>(
     () => ({
       user: data ?? null,
-      role: data ? roleFromCode(data.role) : null,
+      role: data ? data.role : null,
       isAuthenticated: Boolean(data),
       isLoading,
       signIn,

@@ -237,7 +237,7 @@ request. An unverified account cannot sign in.
 |---|---|
 | `BR-MBR-001` | A member holds exactly one active plan, with a recorded subscription history |
 | `BR-MBR-002` | A member's home library is assigned automatically from their city of residence |
-| `BR-MBR-003` | A plan change takes effect immediately and never invalidates reservations in progress |
+| `BR-MBR-003` | ~~A plan change takes effect immediately~~ — **superseded**: an upgrade applies immediately and is prorated; a downgrade is scheduled to the renewal date and charges nothing. Corrected against the prototype's `planModal` on 2026-08-15. Neither invalidates reservations in progress |
 | `BR-CAT-001` | Every book carries its own plan tier, independent of any member's plan |
 | `BR-CAT-002` | A Basic member may only reserve `Basic` tier titles, and only at their home library |
 | `BR-CAT-003` | A Plus member may reserve any title at any library in their city of residence |
@@ -529,7 +529,9 @@ No stage is destructive; the MVP is greenfield. Rollback is per stage:
 | GLOBAL-003 — Resolve C6 point redemption cap | `global_task_spec.md` | ⬜ Not started |
 | GLOBAL-004 — Bootstrap `sdd_strategy/` structure | `global_task_spec.md` | ✅ Done |
 | GLOBAL-005 — Scaffold solution, frontend, and Docker composition | `global_task_spec.md` | ✅ Done — Stage 0 complete |
-| Stages 1–9 | Per-domain `tasks.md` | ⬜ Not started — created during Stage 0 |
+| Stage 1 — `identity` and `network` | `identity.tasks.md`, `network.tasks.md` | ✅ Done — 42/42 and 23/25 |
+| Stage 2 — `membership` and `catalog` | `membership.tasks.md`, `catalog.tasks.md` | ✅ Done — 18/18 and 22/22, closed 2026-08-16 |
+| Stages 3–9 | Per-domain `tasks.md` | ⬜ Not started |
 
 ---
 

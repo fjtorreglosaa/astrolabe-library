@@ -3,22 +3,11 @@ import { httpClient, setAccessToken } from '../../../shared/api/httpClient';
 /** Roles as the API reports them. A member's role is their plan. */
 export type UserRole = 'Basic' | 'Plus' | 'Max' | 'Admin' | 'SuperAdmin';
 
-/** Numeric values as persisted; the API serialises the enum as a number. */
-export const roleFromCode = (code: number): UserRole => {
-  switch (code) {
-    case 0: return 'Basic';
-    case 1: return 'Plus';
-    case 2: return 'Max';
-    case 10: return 'Admin';
-    default: return 'SuperAdmin';
-  }
-};
-
 export interface CurrentUser {
   id: string;
   email: string;
   fullName: string;
-  role: number;
+  role: UserRole;
   countryId: string | null;
   cityId: string | null;
   isStaff: boolean;
@@ -64,13 +53,16 @@ export const getCurrentUser = async (): Promise<CurrentUser> => {
   return data;
 };
 
+/** The plan a member registers on. Only the three member tiers are selectable. */
+export type MemberPlan = Extract<UserRole, 'Basic' | 'Plus' | 'Max'>;
+
 export interface RegisterInput {
   email: string;
   password: string;
   fullName: string;
   countryId: string;
   cityId: string;
-  plan: number;
+  plan: MemberPlan;
 }
 
 export const register = async (input: RegisterInput): Promise<void> => {

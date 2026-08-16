@@ -182,6 +182,52 @@ never returned by any API response.
 
 ---
 
+## Verify against the running system, not only the tests
+
+A green test suite is not evidence that a feature works. Before marking a task done, exercise it
+against the running composition: sign in, call the endpoint, read the response.
+
+Stage 2 shipped two defects that every unit test passed — a value converter that made catalogue
+search fail at run time, and a seeder projection that crashed the API at startup. Both were found
+with `curl`, neither with `dotnet test`.
+
+Watch in particular:
+
+- anything that queries **through a value object** — see the persistence rule below. Stage 2 shipped
+  three of these: catalogue search, the rating average, and ordering by price
+- anything that binds an **enumeration from a request body**
+- anything a **migration or seeder** touches, including the down-migration
+- any **date rendered to a member**, which must be checked in a zone other than the server's
+
+When a defect is found this way, add the regression test that would have caught it, then fix it.
+
+---
+
+## Persisting value objects
+
+Map a value object as an **owned type** (a class) or a **complex type** (a struct such as `Money`),
+never with a value converter, whenever any of its members is ever read, filtered, ordered or
+aggregated in a query.
+
+A converter collapses the object into an opaque scalar, so the provider cannot see the members
+inside it: `book.Isbn.Value` compiles, passes every unit test, and throws at run time. Stage 2 hit
+this three times — `Isbn` broke catalogue search, `StarRating` broke the rating average, and `Money`
+broke ordering by price.
+
+---
+
+## Audit is its own bounded context
+
+`AuditEntry` and `IAuditUnitOfWork` live under `Domain/Features/Audit/`, not under `identity`. Four
+domains append to the trail and none owns it; while it lived in identity, a network handler injected
+the whole `IIdentityUnitOfWork` to write one row.
+
+Write the entry **inside the command handler**, in the same transaction as the change it describes.
+Never in a domain event handler: a reaction runs after the commit and may be lost, and a trail that
+can silently skip a transition is not a trail.
+
+---
+
 ## After completing any task
 
 1. Mark the task done in the relevant `tasks.md`.
@@ -222,5 +268,21 @@ Domains currently under growth watch: `catalog`, `billing`, `identity`.
 
 ## Current state
 
-`sdd_strategy/specs/plans/PLAN-001_astrolabe-books-mvp.md` — **Draft, awaiting approval.**
-No source code exists yet.
+`sdd_strategy/specs/plans/PLAN-001_astrolabe-books-mvp.md` — **Approved, In Progress.**
+
+| Stage | Domains | State |
+|---|---|---|
+| 0 | Scaffolding, Docker composition | ✅ Done |
+| 1 | `identity`, `network` | ✅ Done — 42/42 and 23/25 |
+| 2 | `membership`, `catalog` | ✅ Done — 18/18 and 22/22 |
+| 3–9 | — | Not started |
+
+Open decisions awaiting the user:
+
+- `GLOBAL-018` — split `catalog` into `catalog` / `reviews`? It carries 31 business rules against a
+  limit of 20. Recommendation: defer to before Stage 6.
+- `GLOBAL-019` — remove the plan tiers from `UserRole`? `Subscription.Plan` is the authority and the
+  role now mirrors it, so one fact has two representations.
+- `BLOCK-004` — the Devices and sessions screen has no approved design.
+- `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients.
+- `NET-025` — `BR-NET-005` is half-enforced; the library obligations probe always answers "none".

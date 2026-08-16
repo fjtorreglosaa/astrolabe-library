@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Astrolabe.Application;
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Infrastructure;
@@ -30,7 +31,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 builder.Services.AddAstrolabeAuthentication(builder.Configuration);
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    // Enumerations travel as their names, never as ordinals. A numeric plan or role in a payload
+    // is unreadable in a log, and reordering an enum would silently reinterpret stored requests.
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();

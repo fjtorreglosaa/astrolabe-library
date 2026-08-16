@@ -26,6 +26,7 @@ public sealed class SignInAndSessionHandlerTests
     private static readonly DateTimeOffset Now = new(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
 
     private IdentityUnitOfWorkMock _identity = null!;
+    private AuditUnitOfWorkMock _auditTrail = null!;
     private Mock<IUserRepository> _users = null!;
     private Mock<IUserSessionRepository> _sessions = null!;
     private Mock<IPasswordHasher> _passwordHasher = null!;
@@ -44,6 +45,7 @@ public sealed class SignInAndSessionHandlerTests
     public void SetUp()
     {
         _identity = new IdentityUnitOfWorkMock();
+        _auditTrail = new AuditUnitOfWorkMock();
         _users = _identity.Users;
         _sessions = _identity.Sessions;
         _passwordHasher = new Mock<IPasswordHasher>();
@@ -63,11 +65,11 @@ public sealed class SignInAndSessionHandlerTests
     }
 
     private SignInCommandHandler SignInHandler() => new(
-        _identity.Object, _passwordHasher.Object, _tokenGenerator.Object,
+        _identity.Object, _auditTrail.Object, _passwordHasher.Object, _tokenGenerator.Object,
         _deviceParser.Object, new FixedClock(Now));
 
     private RevokeSessionsCommandHandler RevokeHandler() => new(
-        _identity.Object, _currentUser.Object, new FixedClock(Now));
+        _identity.Object, _auditTrail.Object, _currentUser.Object, new FixedClock(Now));
 
     private GetMySessionsQueryHandler SessionsQueryHandler() =>
         new(_identity.Object, _currentUser.Object, new FixedClock(Now));

@@ -1,6 +1,8 @@
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Identity.Enums;
 using Astrolabe.Domain.Features.Identity.Repositories;
@@ -12,6 +14,7 @@ namespace Astrolabe.Application.Features.Network.Commands.RevokeAdmin;
 
 public sealed class RevokeAdminCommandHandler(
     IIdentityUnitOfWork identity,
+    IAuditUnitOfWork audit,
     INetworkUnitOfWork network,
     ICurrentUser currentUser,
     IDateTimeProvider clock) : ICommandHandler<RevokeAdminCommand>
@@ -63,7 +66,7 @@ public sealed class RevokeAdminCommandHandler(
             target.ChangeRole(UserRole.Basic);
         }
 
-        await identity.Audit.AddAsync(
+        await audit.Entries.AddAsync(
             AuditEntry.Record(
                 "network.admin_revoked", now, actorUserId: actorId, subjectUserId: request.UserId,
                 detail: target.Status is UserStatus.Deleted ? "Invitation withdrawn." : "Role removed."),

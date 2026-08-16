@@ -12,6 +12,18 @@ public static class NetworkErrors
         Error.Authorization("network.super_admin_required",
             "Only a super administrator may perform this operation.");
 
+    /// <summary>
+    /// Backs BR-NET-006. Worded without naming the library: an administrator who may not act on a
+    /// branch has no business learning it exists from an error message.
+    /// </summary>
+    public static readonly Error LibraryOutOfScope =
+        Error.Authorization("network.library_out_of_scope",
+            "You can only act on the libraries assigned to you.");
+
+    public static readonly Error StaffRequired =
+        Error.Authorization("network.staff_required",
+            "Only library staff may perform this operation.");
+
     public static readonly Error CityNotFound =
         Error.NotFound("network.city_not_found", "City not found.");
 

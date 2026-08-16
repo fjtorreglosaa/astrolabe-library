@@ -2,7 +2,6 @@ import { Avatar, Divider, IconButton, ListItemIcon, Menu, MenuItem, Stack, Typog
 import { MaterialSymbol } from '../shared/components/MaterialSymbol';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { roleFromCode } from '../features/auth/api/authApi';
 import { useAuth } from '../features/auth/components/AuthProvider';
 
 /** The account menu: profile, settings, devices and sign out. */
@@ -42,7 +41,7 @@ export const UserMenu = () => {
             {user.email}
           </Typography>
           <Typography variant="overline" color="primary.main">
-            {roleFromCode(user.role)}
+            {user.role}
           </Typography>
         </Stack>
 
@@ -60,6 +59,13 @@ export const UserMenu = () => {
           <ListItemIcon><MaterialSymbol name="devices" size={18} /></ListItemIcon>
           Devices and sessions
         </MenuItem>
+        {/* Staff hold no plan, so the entry would only ever lead to an error for them. */}
+        {user.isStaff ? null : (
+          <MenuItem onClick={() => go('/settings/membership')}>
+            <ListItemIcon><MaterialSymbol name="workspace_premium" size={18} /></ListItemIcon>
+            Membership
+          </MenuItem>
+        )}
 
         <Divider />
 

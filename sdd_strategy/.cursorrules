@@ -225,5 +225,46 @@ plan and stage as its identifier, for example: feat(PLAN-001-stage-1): identity 
 
 Pushing is a separate action and needs its own approval.
 
+## RULE 22 — VERIFY AGAINST THE RUNNING SYSTEM, NOT ONLY THE TESTS
+A green test suite is not evidence that a feature works.
+
+Before marking a task done, exercise it against the running composition: sign in, call the endpoint,
+read the response. Stage 2 shipped two defects that every unit test passed — a value converter that
+made catalogue search fail at run time, and a seeder projection that crashed the API at startup.
+Both were found by curl, neither by dotnet test.
+
+This applies in particular to:
+  - anything that queries through a value object
+  - anything that binds an enumeration from a request body
+  - anything a migration or a seeder touches
+  - any date rendered to a member, which must be checked in a zone other than the server's
+
+When a defect is found this way, add the regression test that would have caught it, then fix it.
+
+## RULE 23 — PERSISTING VALUE OBJECTS
+Map a value object as an owned type, not with a value converter, whenever any of its members is ever
+read in a query.
+
+A converter collapses the object into an opaque scalar, so the provider cannot see inside it:
+book.Isbn.Value compiles, passes every unit test, and throws at run time. An owned type produces the
+same single column and keeps its members queryable.
+
+For a value object that is a struct, such as Money, use ComplexProperty — the same idea for value
+types. A converter is acceptable only for a value object that is never read, filtered, ordered or
+aggregated inside a query.
+
+Stage 2 hit this three times: Isbn broke catalogue search, StarRating broke the rating average, and
+Money broke ordering by price. All three compiled and passed every unit test.
+
+## RULE 24 — AUDIT IS ITS OWN BOUNDED CONTEXT
+AuditEntry and IAuditUnitOfWork live under Domain/Features/Audit/, not under identity. Four domains
+append to the trail and none owns it.
+
+Never inject IIdentityUnitOfWork just to write an audit row.
+
+Write the entry inside the command handler, in the same transaction as the change it describes.
+Never in a domain event handler: a reaction runs after the commit and may be lost, and a trail that
+can silently skip a transition is not a trail.
+
 ## RULE 14 — LANGUAGE
 All repository content is written in English: code, comments, specs, docs, commit messages, and UI copy.
