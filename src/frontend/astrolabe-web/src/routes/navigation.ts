@@ -110,6 +110,12 @@ export const navigationSections: NavigationSection[] = [
         visibleTo: ['staff', 'superAdmin'],
       },
       {
+        route: '/admin/ai',
+        label: 'AI settings',
+        icon: 'auto_awesome',
+        visibleTo: ['staff', 'superAdmin'],
+      },
+      {
         route: '/admin/support',
         label: 'Support tickets',
         icon: 'contact_support',

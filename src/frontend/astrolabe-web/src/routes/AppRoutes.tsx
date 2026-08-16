@@ -20,6 +20,8 @@ import { AdminUsersPage } from '../features/users/pages/AdminUsersPage';
 import { AdminBooksPage } from '../features/admin-catalog/pages/AdminBooksPage';
 import { AdminLibrariesPage } from '../features/network/pages/AdminLibrariesPage';
 import { AcceptInvitationPage } from '../features/network/pages/AcceptInvitationPage';
+import { AiRecommendationsPage } from '../features/recommendations/pages/AiRecommendationsPage';
+import { AdminAiSettingsPage } from '../features/recommendations/pages/AdminAiSettingsPage';
 
 /**
  * The route table.
@@ -51,13 +53,14 @@ export const AppRoutes = () => (
         <Route path="/settings/membership" element={<MembershipPage />} />
 
         <Route element={<PlanGuard allow={PaidPlans} />}>
-          <Route path="/ai" element={<PlaceholderScreen title="AI recommendations" stage="Stage 7" />} />
+          <Route path="/ai" element={<AiRecommendationsPage />} />
         </Route>
 
         <Route element={<RoleGuard allow={StaffRoles} />}>
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/books" element={<AdminBooksPage />} />
           <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+          <Route path="/admin/ai" element={<AdminAiSettingsPage />} />
           <Route path="/admin/support" element={<PlaceholderScreen title="Support tickets" stage="Stage 9" />} />
         </Route>
 

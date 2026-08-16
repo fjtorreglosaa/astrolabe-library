@@ -65,6 +65,9 @@ describe('sidebar composition', () => {
       '/admin/users',
       '/admin/books',
       '/admin/payments',
+      // Added at Stage 7. The list is asserted exactly on purpose: an entry appearing in the
+      // sidebar without anyone deciding it should is how a surface leaks to the wrong audience.
+      '/admin/ai',
       '/admin/support',
       '/admin/libraries',
     ]);

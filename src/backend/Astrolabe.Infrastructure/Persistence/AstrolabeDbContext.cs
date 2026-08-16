@@ -11,6 +11,7 @@ using Astrolabe.Domain.Features.Network.Entities;
 using Astrolabe.Domain.Features.Reservations.Entities;
 using Astrolabe.Domain.Features.Store.Entities;
 using Microsoft.EntityFrameworkCore;
+using Astrolabe.Domain.Features.Recommendations.Entities;
 
 namespace Astrolabe.Infrastructure.Persistence;
 
@@ -66,6 +67,10 @@ public sealed class AstrolabeDbContext(
     public DbSet<DeskPayment> DeskPayments => Set<DeskPayment>();
 
     public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<LibraryAiConfiguration> LibraryAiConfigurations => Set<LibraryAiConfiguration>();
+
+    public DbSet<RecommendationSet> RecommendationSets => Set<RecommendationSet>();
 
     public DbSet<OrderLine> OrderLines => Set<OrderLine>();
 

@@ -257,6 +257,17 @@ plan, reached through `IEntitlementProvider`.
 Before adding a field, ask what single question it answers. If the honest answer names two, it is
 two fields.
 
+## A new package is a new attack surface
+
+`dotnet build` reports `NU1901`–`NU1904` for a dependency with a known advisory, and it is not
+noise. Adding `Microsoft.AspNetCore.DataProtection` at Stage 7 pulled in a **critical** advisory on
+the very component that protects provider credentials, and it showed up only because the warning
+count went from 0 to 54.
+
+Keep the count at zero. After adding any package, run
+`dotnet list package --vulnerable --include-transitive` and pin a patched version before committing.
+A build with warnings is a build nobody reads.
+
 ## Strings that must match an enum use `nameof`
 
 Authorization policies, claim values and anything else compared against an enum's name are written
@@ -319,7 +330,7 @@ aggregate root, not before.
 | 4 | `billing` | ✅ Done — 22/22 |
 | 5 | `store` | ✅ Done — 17/17 |
 | 6 | Administration surfaces | ✅ Done — user directory, book management, libraries and admins |
-| 7 | `recommendations` | 🔄 Specifications authored, 0/18 built |
+| 7 | `recommendations` | ✅ Done — 18/18 |
 | 8–9 | — | Not started |
 
 Open decisions awaiting the user:
@@ -328,7 +339,7 @@ Open decisions awaiting the user:
   change on your side, not a decision.
 - `GLOBAL-023` — the recommendation rate limit (`BR-REC-011`) names no figure. Proposed: one
   regeneration per member per hour.
-- `BLOCK-007` — no provider credential is available to exercise `BR-REC-008` against a real
-  vendor. Every test mocks it; this only blocks a live check.
+- `BLOCK-007` — no provider credential is available to see a *successful* generation end to end.
+  The refusal path is verified against the real vendor; only the happy path is unproven.
 - The **match percentage** on a recommendation has no stated derivation in the prototype. Recorded
   as model-supplied display copy rather than a computed score — see `recommendations.business.md` §8.
