@@ -16,13 +16,27 @@ import { useState } from 'react';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
 import { useAuth } from '../../auth/components/AuthProvider';
-import { getMySessions, revokeSession, revokeSessions, RevocationScope, type Session } from '../api/sessionsApi';
+import {
+  getMySessions,
+  revokeSession,
+  revokeSessions,
+  RevocationScope,
+  type DeviceType,
+  type Session,
+} from '../api/sessionsApi';
 
 /**
  * Devices and sessions.
  *
- * **This screen does not exist in the approved prototype** (`BLOCK-004`). It is built in the
- * prototype's visual language and needs a design review before the domain is accepted.
+ * **This screen does not exist in the prototype.** Its design was settled by review on 2026-08-16
+ * (`GLOBAL-011`, closing `BLOCK-004`) rather than transcribed, so the reasoning lives in
+ * `identity.business.md` §Devices.
+ *
+ * The shape is a security screen, not a settings screen: the reader is scanning for a device they do
+ * not recognise, so each row leads with what identifies it and the destructive action sits at the
+ * end of the row rather than behind a menu. The current device is pinned first and cannot be signed
+ * out individually — its button would do the same thing as "sign out everywhere", which is offered
+ * separately and named plainly.
  *
  * It shows only the caller's own sessions: the API takes no parameter for whose sessions to act on,
  * so BR-IDN-025 cannot be bypassed from here or anywhere else.
@@ -65,7 +79,16 @@ export const DevicesAndSessionsPage = () => {
     return <ErrorState description="We could not load your devices." onRetry={() => sessions.refetch()} />;
   }
 
-  const live = sessions.data ?? [];
+  // This device first, then the rest by most recently seen. A member scanning for something they do
+  // not recognise reads from the top, and the one row they can always account for belongs there.
+  const live = [...(sessions.data ?? [])].sort((a, b) => {
+    if (a.isCurrent !== b.isCurrent) {
+      return a.isCurrent ? -1 : 1;
+    }
+
+    return new Date(b.lastSeenAt).getTime() - new Date(a.lastSeenAt).getTime();
+  });
+
   const others = live.filter((session) => !session.isCurrent);
 
   return (
@@ -103,7 +126,16 @@ export const DevicesAndSessionsPage = () => {
                 <ListItemIcon>{deviceIcon(session.deviceType)}</ListItemIcon>
                 <ListItemText
                   primary={session.deviceName}
-                  secondary={`${session.approximateLocation ?? session.ipAddress} · last active ${formatRelative(session.lastSeenAt)}`}
+                  secondary={
+                    <>
+                      {session.approximateLocation ?? session.ipAddress} · last active{' '}
+                      {formatRelative(session.lastSeenAt)}
+                      <br />
+                      {/* The date a device first appeared is what tells a member whether they
+                          recognise it. "Last active" alone cannot: an intruder is active now. */}
+                      Signed in {formatRelative(session.createdAt)}
+                    </>
+                  }
                 />
               </ListItem>
             ))}
@@ -141,19 +173,27 @@ export const DevicesAndSessionsPage = () => {
   );
 };
 
-const deviceIcon = (deviceType: number) => {
+/**
+ * Matches on the name the API sends. This compared against numeric codes until `GLOBAL-011`, which
+ * meant nothing ever matched and every row showed the fallback.
+ */
+export const deviceIconName = (deviceType: DeviceType): string => {
   switch (deviceType) {
-    case 2:
-      return <MaterialSymbol name="smartphone" size={20} />;
-    case 3:
-      return <MaterialSymbol name="tablet" size={20} />;
-    case 1:
-    case 4:
-      return <MaterialSymbol name="computer" size={20} />;
+    case 'Mobile':
+      return 'smartphone';
+    case 'Tablet':
+      return 'tablet';
+    case 'Web':
+    case 'Desktop':
+      return 'computer';
     default:
-      return <MaterialSymbol name="devices" size={20} />;
+      return 'devices';
   }
 };
+
+const deviceIcon = (deviceType: DeviceType) => (
+  <MaterialSymbol name={deviceIconName(deviceType)} size={20} />
+);
 
 const confirmTitle = (pending: { kind: string } | null) => {
   switch (pending?.kind) {
