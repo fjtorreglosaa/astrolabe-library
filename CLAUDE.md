@@ -176,6 +176,11 @@ tests. Each EF InMemory test gets a unique database name.
 
 ## Security
 
+**No card number ever enters this system.** `PaymentMethod` holds brand, last four digits, expiry and
+cardholder only; the factory refuses anything but four digits rather than truncating, and the column
+is `character(4)`. There is no field, no DTO and no endpoint that could carry a full number. Never
+add one — a tokenising provider returns exactly these details and nothing more is needed.
+
 Secrets, API keys, passwords, and connection strings never appear in committed files. Passwords are always
 hashed. API error responses never include stack traces. AI provider keys are encrypted at rest and are
 never returned by any API response.
@@ -286,7 +291,8 @@ Domains currently under growth watch: `catalog`, `billing`, `identity`.
 | 1 | `identity`, `network` | ✅ Done — 42/42 and 23/25 |
 | 2 | `membership`, `catalog` | ✅ Done — 18/18 and 22/22 |
 | 3 | `reservations` | ✅ Done — 20/20 |
-| 4–9 | — | Not started |
+| 4 | `billing` | ✅ Done — 22/22 |
+| 5–9 | — | Not started |
 
 Open decisions awaiting the user:
 

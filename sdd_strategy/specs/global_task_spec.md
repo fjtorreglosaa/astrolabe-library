@@ -163,6 +163,7 @@ the original `catalog` / `reviews` split.
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | PLAN-001 Stage 4 | AI Agent — Claude | `billing` closed, 22/22. The plan's acceptance criterion verified live: 20 days overdue is exactly $7.00 and 26 days is capped at $9.00 |
 | 2026-08-16 | PLAN-001 Stage 3 | AI Agent — Claude | `reservations` closed, 20/20. The mandatory race for the last copy was run ten times against the running system: ten correct outcomes, never a negative count |
 | 2026-08-16 | `GLOBAL-020` | AI Agent — Claude | Audit promoted to its own bounded context. Five `network` handlers stopped injecting `IIdentityUnitOfWork` for a single row, and `catalog` can now satisfy BR-CAT-025 without knowing identity exists |
 | 2026-08-15 | `GLOBAL-001` | Francisco Torregrosa | Precedence approved: prototype → SDD+ → GUIDELINES |

@@ -1,4 +1,5 @@
 using Astrolabe.Domain.Features.Audit.Repositories;
+using Astrolabe.Domain.Features.Billing.Repositories;
 using Astrolabe.Domain.Features.Catalog.Repositories;
 using Astrolabe.Domain.Features.Membership.Repositories;
 using Astrolabe.Domain.Features.Reservations.Repositories;
@@ -162,4 +163,42 @@ public sealed class ReservationUnitOfWorkMock
     public int Saved { get; private set; }
 
     public IReservationUnitOfWork Object => Mock.Object;
+}
+
+/// <summary>The billing context, for the fine, payment and desk handlers.</summary>
+public sealed class BillingUnitOfWorkMock
+{
+    public BillingUnitOfWorkMock()
+    {
+        Mock.SetupGet(u => u.Fines).Returns(() => Fines.Object);
+        Mock.SetupGet(u => u.Ledger).Returns(() => Ledger.Object);
+        Mock.SetupGet(u => u.PaymentMethods).Returns(() => PaymentMethods.Object);
+        Mock.SetupGet(u => u.DeskPayments).Returns(() => DeskPayments.Object);
+        Mock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1)
+            .Callback(() => Saved++);
+
+        // Empty by default, so a test that does not arrange fines gets "none" rather than a null.
+        Fines.Setup(r => r.GetByIdsForMemberAsync(
+                It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        Fines.Setup(r => r.GetByDeskPaymentAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        PaymentMethods.Setup(r => r.GetForMemberAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+    }
+
+    public Mock<IBillingUnitOfWork> Mock { get; } = new();
+
+    public Mock<IFineRepository> Fines { get; } = new();
+
+    public Mock<ILedgerRepository> Ledger { get; } = new();
+
+    public Mock<IPaymentMethodRepository> PaymentMethods { get; } = new();
+
+    public Mock<IDeskPaymentRepository> DeskPayments { get; } = new();
+
+    public int Saved { get; private set; }
+
+    public IBillingUnitOfWork Object => Mock.Object;
 }

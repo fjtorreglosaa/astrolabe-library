@@ -532,7 +532,8 @@ No stage is destructive; the MVP is greenfield. Rollback is per stage:
 | Stage 1 — `identity` and `network` | `identity.tasks.md`, `network.tasks.md` | ✅ Done — 42/42 and 23/25 |
 | Stage 2 — `membership` and `catalog` | `membership.tasks.md`, `catalog.tasks.md` | ✅ Done — 18/18 and 22/22, closed 2026-08-16 |
 | Stage 3 — `reservations` | `reservations.tasks.md` | ✅ Done — 20/20, closed 2026-08-16 |
-| Stages 4–9 | Per-domain `tasks.md` | ⬜ Not started |
+| Stage 4 — `billing` | `billing.tasks.md` | ✅ Done — 22/22, closed 2026-08-16 |
+| Stages 5–9 | Per-domain `tasks.md` | ⬜ Not started |
 
 ---
 

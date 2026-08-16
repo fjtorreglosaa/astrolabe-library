@@ -38,6 +38,15 @@ public sealed class ReservationRepository(AstrolabeDbContext context)
             .OrderBy(r => r.Period.DueOn)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Reservation>> GetLateReturnsAsync(
+        int maxCount, CancellationToken cancellationToken = default) =>
+        await ReadOnlyQuery
+            .Where(r => r.Status == ReservationStatus.Returned && r.DaysLateAtCheckIn > 0)
+            // Oldest first: a fine that has been missed longest is the one most worth catching up.
+            .OrderBy(r => r.CheckedInAt)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
+
     public async Task<PagedResult<Reservation>> GetForLibrariesAsync(
         IReadOnlyCollection<Guid> libraryIds, ReservationStatus? status, int page, int pageSize,
         CancellationToken cancellationToken = default)

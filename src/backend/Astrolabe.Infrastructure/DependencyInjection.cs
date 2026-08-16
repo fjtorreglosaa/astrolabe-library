@@ -7,9 +7,11 @@ using Astrolabe.Domain.Abstractions;
 using Astrolabe.Domain.Abstractions.Persistence;
 using Astrolabe.Infrastructure.Integrations.Mail;
 using Astrolabe.Infrastructure.Features.Identity;
+using Astrolabe.Infrastructure.Features.Billing;
 using Astrolabe.Infrastructure.Features.Membership;
 using Astrolabe.Infrastructure.Features.Network;
 using Astrolabe.Domain.Features.Audit.Repositories;
+using Astrolabe.Domain.Features.Billing.Repositories;
 using Astrolabe.Domain.Features.Catalog.Repositories;
 using Astrolabe.Domain.Features.Identity.Repositories;
 using Astrolabe.Domain.Features.Membership.Repositories;
@@ -18,6 +20,7 @@ using Astrolabe.Domain.Features.Reservations.Repositories;
 using Astrolabe.Infrastructure.Persistence;
 using Astrolabe.Infrastructure.Persistence.Repositories;
 using Astrolabe.Infrastructure.Persistence.Repositories.Audit;
+using Astrolabe.Infrastructure.Persistence.Repositories.Billing;
 using Astrolabe.Infrastructure.Persistence.Repositories.Catalog;
 using Astrolabe.Infrastructure.Persistence.Repositories.Identity;
 using Astrolabe.Infrastructure.Persistence.Repositories.Membership;
@@ -69,6 +72,12 @@ public static class DependencyInjection
         services.Configure<PlanRenewalOptions>(
             configuration.GetSection(PlanRenewalOptions.SectionName));
         services.AddHostedService<ApplyDuePlanChangesJob>();
+
+        // The event handler prices a fine immediately; this guarantees none is ever missed. A
+        // post-commit reaction may be lost, and a lost one would be an unbilled fine.
+        services.Configure<FineAccrualOptions>(
+            configuration.GetSection(FineAccrualOptions.SectionName));
+        services.AddHostedService<AssessOutstandingFinesJob>();
         services.AddScoped<ILibraryLocationProvider, LibraryLocationProvider>();
 
         // Placeholder until catalog, reservations and billing exist. See NET-025.
@@ -97,11 +106,16 @@ public static class DependencyInjection
         services.AddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
         services.AddScoped<IAuditUnitOfWork, AuditUnitOfWork>();
         services.AddScoped<IReservationUnitOfWork, ReservationUnitOfWork>();
+        services.AddScoped<IBillingUnitOfWork, BillingUnitOfWork>();
 
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<IBookRepository, BookRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
+        services.AddScoped<IFineRepository, FineRepository>();
+        services.AddScoped<ILedgerRepository, LedgerRepository>();
+        services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+        services.AddScoped<IDeskPaymentRepository, DeskPaymentRepository>();
 
         services.AddScoped<ICountryRepository, CountryRepository>();
         services.AddScoped<ICityRepository, CityRepository>();

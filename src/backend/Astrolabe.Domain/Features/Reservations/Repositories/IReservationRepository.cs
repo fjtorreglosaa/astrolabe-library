@@ -34,6 +34,13 @@ public interface IReservationRepository : IRepository<Reservation>
     Task<IReadOnlyList<Reservation>> GetActiveForMemberAsync(
         Guid memberId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returned reservations that came back late. The sweep in <c>billing</c> uses this to find
+    /// loans whose fine was never assessed, so a lost domain event never becomes an unbilled fine.
+    /// </summary>
+    Task<IReadOnlyList<Reservation>> GetLateReturnsAsync(
+        int maxCount, CancellationToken cancellationToken = default);
+
     /// <summary>Reservations against a set of libraries. Empty set yields an empty page.</summary>
     Task<PagedResult<Reservation>> GetForLibrariesAsync(
         IReadOnlyCollection<Guid> libraryIds, ReservationStatus? status, int page, int pageSize,

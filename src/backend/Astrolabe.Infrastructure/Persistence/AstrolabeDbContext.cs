@@ -3,6 +3,7 @@ using Astrolabe.Application.Abstractions.Events;
 using Astrolabe.Domain.Abstractions;
 using Astrolabe.Domain.Abstractions.Persistence;
 using Astrolabe.Domain.Features.Audit.Entities;
+using Astrolabe.Domain.Features.Billing.Entities;
 using Astrolabe.Domain.Features.Catalog.Entities;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Membership.Entities;
@@ -54,6 +55,14 @@ public sealed class AstrolabeDbContext(
     public DbSet<Review> Reviews => Set<Review>();
 
     public DbSet<Reservation> Reservations => Set<Reservation>();
+
+    public DbSet<Fine> Fines => Set<Fine>();
+
+    public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
+
+    public DbSet<PaymentMethod> PaymentMethods => Set<PaymentMethod>();
+
+    public DbSet<DeskPayment> DeskPayments => Set<DeskPayment>();
 
     /// <summary>
     /// Commits, then publishes whatever the aggregates raised.

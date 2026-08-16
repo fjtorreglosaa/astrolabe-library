@@ -70,6 +70,243 @@ namespace Astrolabe.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_entries", "astrolabe");
                 });
 
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.DeskPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.PrimitiveCollection<Guid[]>("FineIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("fine_ids");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("issued_at");
+
+                    b.Property<Guid>("LibraryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("library_id");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("member_id");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Amount", "Astrolabe.Domain.Features.Billing.Entities.DeskPayment.Amount#Money", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<long>("Cents")
+                                .HasColumnType("bigint")
+                                .HasColumnName("amount_cents");
+                        });
+
+                    b.HasKey("Id")
+                        .HasName("pk_desk_payments");
+
+                    b.HasIndex("LibraryId", "Status")
+                        .HasDatabaseName("ix_desk_payments_library_id_status");
+
+                    b.HasIndex("MemberId", "Status")
+                        .HasDatabaseName("ix_desk_payments_member_id_status");
+
+                    b.ToTable("desk_payments", "astrolabe");
+                });
+
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.Fine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("AssessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assessed_at");
+
+                    b.Property<string>("BookTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("book_title");
+
+                    b.Property<int>("DaysLate")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_late");
+
+                    b.Property<Guid?>("DeskPaymentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("desk_payment_id");
+
+                    b.Property<Guid>("LibraryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("library_id");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("member_id");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reservation_id");
+
+                    b.Property<DateTimeOffset?>("SettledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("settled_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("status");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Amount", "Astrolabe.Domain.Features.Billing.Entities.Fine.Amount#Money", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<long>("Cents")
+                                .HasColumnType("bigint")
+                                .HasColumnName("amount_cents");
+                        });
+
+                    b.HasKey("Id")
+                        .HasName("pk_fines");
+
+                    b.HasIndex("DeskPaymentId")
+                        .HasDatabaseName("ix_fines_desk_payment_id");
+
+                    b.HasIndex("LibraryId")
+                        .HasDatabaseName("ix_fines_library_id");
+
+                    b.HasIndex("ReservationId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_fines_reservation_id");
+
+                    b.HasIndex("MemberId", "Status")
+                        .HasDatabaseName("ix_fines_member_id_status");
+
+                    b.ToTable("fines", "astrolabe");
+                });
+
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.LedgerEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid?>("FineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("fine_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("member_id");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid?>("ReservationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reservation_id");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Amount", "Astrolabe.Domain.Features.Billing.Entities.LedgerEntry.Amount#Money", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<long>("Cents")
+                                .HasColumnType("bigint")
+                                .HasColumnName("amount_cents");
+                        });
+
+                    b.HasKey("Id")
+                        .HasName("pk_ledger_entries");
+
+                    b.HasIndex("MemberId", "OccurredAt")
+                        .HasDatabaseName("ix_ledger_entries_member_id_occurred_at");
+
+                    b.ToTable("ledger_entries", "astrolabe");
+                });
+
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.PaymentMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("brand");
+
+                    b.Property<string>("CardholderName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("cardholder_name");
+
+                    b.Property<string>("ExpiryMonthYear")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("expiry_month_year");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary");
+
+                    b.Property<string>("Last4")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("character(4)")
+                        .HasColumnName("last4")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("member_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payment_methods");
+
+                    b.HasIndex("MemberId")
+                        .HasDatabaseName("ix_payment_methods_member_id");
+
+                    b.ToTable("payment_methods", "astrolabe");
+                });
+
             modelBuilder.Entity("Astrolabe.Domain.Features.Catalog.Entities.Book", b =>
                 {
                     b.Property<Guid>("Id")
@@ -786,6 +1023,95 @@ namespace Astrolabe.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_reservations_member_id_status");
 
                     b.ToTable("reservations", "astrolabe");
+                });
+
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.DeskPayment", b =>
+                {
+                    b.HasOne("Astrolabe.Domain.Features.Network.Entities.Library", null)
+                        .WithMany()
+                        .HasForeignKey("LibraryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_desk_payments_libraries_library_id");
+
+                    b.HasOne("Astrolabe.Domain.Features.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_desk_payments_users_member_id");
+
+                    b.OwnsOne("Astrolabe.Domain.Features.Billing.ValueObjects.PaymentCode", "Code", b1 =>
+                        {
+                            b1.Property<Guid>("DeskPaymentId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("code");
+
+                            b1.HasKey("DeskPaymentId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique()
+                                .HasDatabaseName("ix_desk_payments_code");
+
+                            b1.ToTable("desk_payments", "astrolabe");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DeskPaymentId")
+                                .HasConstraintName("fk_desk_payments_desk_payments_id");
+                        });
+
+                    b.Navigation("Code")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.Fine", b =>
+                {
+                    b.HasOne("Astrolabe.Domain.Features.Network.Entities.Library", null)
+                        .WithMany()
+                        .HasForeignKey("LibraryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_fines_libraries_library_id");
+
+                    b.HasOne("Astrolabe.Domain.Features.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_fines_users_member_id");
+
+                    b.HasOne("Astrolabe.Domain.Features.Reservations.Entities.Reservation", null)
+                        .WithMany()
+                        .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_fines_reservations_reservation_id");
+                });
+
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.LedgerEntry", b =>
+                {
+                    b.HasOne("Astrolabe.Domain.Features.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ledger_entries_users_member_id");
+                });
+
+            modelBuilder.Entity("Astrolabe.Domain.Features.Billing.Entities.PaymentMethod", b =>
+                {
+                    b.HasOne("Astrolabe.Domain.Features.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_payment_methods_users_member_id");
                 });
 
             modelBuilder.Entity("Astrolabe.Domain.Features.Catalog.Entities.Book", b =>
