@@ -22,6 +22,7 @@ import { money } from '../../membership/planCopy';
 import { getBook, getReviews, publishReview, removeReview } from '../api/catalogApi';
 import { GENRE_LABEL, bookBadgeLabel, copyReasonLabel } from '../catalogCopy';
 import { ReserveDialog } from '../../reservations/components/ReserveDialog';
+import { BuyBookDialog } from '../../store/components/BuyBookDialog';
 import { BookCover } from './BookCover';
 
 /**
@@ -42,6 +43,7 @@ export const BookDetailDialog = ({ bookId, membership, onClose }: BookDetailDial
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [reserving, setReserving] = useState(false);
+  const [buying, setBuying] = useState(false);
 
   const book = useQuery({
     queryKey: ['catalog', 'book', bookId],
@@ -150,14 +152,20 @@ export const BookDetailDialog = ({ bookId, membership, onClose }: BookDetailDial
                     </Alert>
                   ) : null}
 
-                  <Button
-                    variant="contained"
-                    disabled={!book.data.canReserve}
-                    sx={{ alignSelf: 'flex-start' }}
-                    onClick={() => setReserving(true)}
-                  >
-                    {book.data.canReserve ? 'Reserve' : 'Unavailable'}
-                  </Button>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="contained"
+                      disabled={!book.data.canReserve}
+                      onClick={() => setReserving(true)}
+                    >
+                      {book.data.canReserve ? 'Reserve' : 'Unavailable'}
+                    </Button>
+                    {/* Buying is always offered: BR-STR-012 makes reach decide the discount, never
+                        the right to buy. A book nobody can borrow can still be owned. */}
+                    <Button variant="outlined" onClick={() => setBuying(true)}>
+                      Buy {money(book.data.retailPriceCents)}
+                    </Button>
+                  </Stack>
                 </Stack>
               </Stack>
 
@@ -278,6 +286,13 @@ export const BookDetailDialog = ({ bookId, membership, onClose }: BookDetailDial
 
       {/* Nested rather than opened from the catalogue page, so the member keeps the book they were
           reading behind the confirmation and can step back to it. */}
+      <BuyBookDialog
+        bookId={buying && book.data ? book.data.id : null}
+        title={book.data?.title ?? ''}
+        coverUrl={book.data?.coverUrl ?? null}
+        onClose={() => setBuying(false)}
+      />
+
       <ReserveDialog
         bookId={reserving && book.data ? book.data.id : null}
         onClose={() => setReserving(false)}

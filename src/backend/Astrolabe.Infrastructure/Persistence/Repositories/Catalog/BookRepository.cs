@@ -16,6 +16,20 @@ public sealed class BookRepository(AstrolabeDbContext context)
             .Include(book => book.Copies)
             .FirstOrDefaultAsync(book => book.Id == bookId, cancellationToken);
 
+    public async Task<IReadOnlyList<Book>> GetByIdsWithCopiesAsync(
+        IReadOnlyCollection<Guid> bookIds, CancellationToken cancellationToken = default)
+    {
+        if (bookIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await ReadOnlyQuery
+            .Include(book => book.Copies)
+            .Where(book => bookIds.Contains(book.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> ExistsWithIsbnAsync(
         string normalisedIsbn, CancellationToken cancellationToken = default) =>
         await ReadOnlyQuery.AnyAsync(book => book.Isbn.Value == normalisedIsbn, cancellationToken);

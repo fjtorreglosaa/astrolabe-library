@@ -9,6 +9,7 @@ using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Membership.Entities;
 using Astrolabe.Domain.Features.Network.Entities;
 using Astrolabe.Domain.Features.Reservations.Entities;
+using Astrolabe.Domain.Features.Store.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Astrolabe.Infrastructure.Persistence;
@@ -63,6 +64,12 @@ public sealed class AstrolabeDbContext(
     public DbSet<PaymentMethod> PaymentMethods => Set<PaymentMethod>();
 
     public DbSet<DeskPayment> DeskPayments => Set<DeskPayment>();
+
+    public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<OrderLine> OrderLines => Set<OrderLine>();
+
+    public DbSet<PointsMovement> PointsMovements => Set<PointsMovement>();
 
     /// <summary>
     /// Commits, then publishes whatever the aggregates raised.

@@ -10,6 +10,7 @@ import { AuthLayout } from '../layouts/AuthLayout';
 import { CatalogPage } from '../features/catalog/pages/CatalogPage';
 import { AdminPaymentsPage } from '../features/billing/pages/AdminPaymentsPage';
 import { FinesPage } from '../features/billing/pages/FinesPage';
+import { PurchasesPage } from '../features/store/pages/PurchasesPage';
 import { HomePage } from '../features/reservations/pages/HomePage';
 import { LoansPage } from '../features/reservations/pages/LoansPage';
 import { MembershipPage } from '../features/membership/pages/MembershipPage';
@@ -37,7 +38,7 @@ export const AppRoutes = () => (
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/loans" element={<LoansPage />} />
         <Route path="/fines" element={<FinesPage />} />
-        <Route path="/purchases" element={<PlaceholderScreen title="My purchases" stage="Stage 5" />} />
+        <Route path="/purchases" element={<PurchasesPage />} />
         <Route path="/support" element={<PlaceholderScreen title="Help & support" stage="Stage 9" />} />
         <Route path="/profile" element={<PlaceholderScreen title="My profile" stage="Stage 2" />} />
         <Route path="/settings" element={<PlaceholderScreen title="Settings" stage="Stage 2" />} />

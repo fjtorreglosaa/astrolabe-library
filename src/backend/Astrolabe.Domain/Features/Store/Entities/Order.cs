@@ -1,0 +1,109 @@
+using Astrolabe.Domain.Abstractions;
+using Astrolabe.Domain.Features.Membership.Enums;
+using Astrolabe.Domain.Features.Store.Enums;
+using Astrolabe.Domain.Features.Store.Errors;
+using Astrolabe.Domain.Features.Store.Events;
+using Astrolabe.Domain.Features.Store.Policies;
+using Astrolabe.Domain.Primitives;
+
+namespace Astrolabe.Domain.Features.Store.Entities;
+
+/// <summary>
+/// One purchase. Implements BR-STR-010 to BR-STR-015.
+///
+/// <para>
+/// Every total is <b>stored, not recomputed</b>. An order is a receipt: what it says was charged has
+/// to stay what was charged, whatever a price or a plan does afterwards. The same reasoning that
+/// freezes a fine at assessment.
+/// </para>
+/// </summary>
+public sealed class Order : AggregateRoot
+{
+    /// <summary>BR-STR-010. The same $3.99 the delivery of a loan costs, added once per order.</summary>
+    public static readonly Money ShippingCost = Money.FromUnits(3, 99);
+
+    private readonly List<OrderLine> _lines = [];
+
+    private Order()
+    {
+    }
+
+    private Order(
+        Guid id, Guid memberId, OrderFulfilment fulfilment,
+        IEnumerable<OrderLine> lines, PlanTier plan, string? idempotencyKey,
+        DateTimeOffset now) : base(id)
+    {
+        MemberId = memberId;
+        Fulfilment = fulfilment;
+        Status = OrderStatus.Paid;
+        PlacedAt = now;
+        IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey.Trim();
+
+        _lines.AddRange(lines);
+
+        Subtotal = Money.FromCents(_lines.Sum(line => line.GrossTotal.Cents));
+        DiscountTotal = Money.FromCents(_lines.Sum(line => line.DiscountAmount.Cents));
+
+        // BR-STR-010: once per order, however many lines it has.
+        ShippingFee = fulfilment is OrderFulfilment.Shipping ? ShippingCost : Money.Zero;
+
+        // The sum of the lines, never a percentage of the subtotal — BR-STR-004.
+        var afterDiscount = Money.FromCents(_lines.Sum(line => line.LineTotal.Cents));
+
+        Total = afterDiscount + ShippingFee;
+
+        // Earned on what was paid for the books. The shipping fee is a service, not spend on books,
+        // so it does not earn — a member cannot buy points by choosing delivery.
+        PointsEarned = RewardPointsPolicy.Earned(plan, afterDiscount);
+
+        Raise(new OrderPlaced(Guid.NewGuid(), now, id, memberId, Total, PointsEarned, _lines.Count));
+    }
+
+    public Guid MemberId { get; private set; }
+
+    public OrderFulfilment Fulfilment { get; private set; }
+
+    public OrderStatus Status { get; private set; }
+
+    /// <summary>The sum of the lines before any discount.</summary>
+    public Money Subtotal { get; private set; }
+
+    public Money DiscountTotal { get; private set; }
+
+    public Money ShippingFee { get; private set; }
+
+    /// <summary>What was charged. Stored, because a receipt does not change its mind.</summary>
+    public Money Total { get; private set; }
+
+    /// <summary>Point-cents earned. Zero for everyone but Max.</summary>
+    public int PointsEarned { get; private set; }
+
+    public DateTimeOffset PlacedAt { get; private set; }
+
+    /// <summary>Deduplicates a retried purchase. BR-STR-015.</summary>
+    public string? IdempotencyKey { get; private set; }
+
+    public IReadOnlyList<OrderLine> Lines => _lines;
+
+    public static Result<Order> Place(
+        Guid memberId,
+        OrderFulfilment fulfilment,
+        IReadOnlyList<OrderLine> lines,
+        PlanTier plan,
+        string? idempotencyKey,
+        DateTimeOffset now)
+    {
+        if (lines.Count == 0)
+        {
+            return Result.Failure<Order>(StoreErrors.NothingToBuy);
+        }
+
+        return Result.Success(new Order(
+            Guid.NewGuid(), memberId, fulfilment, lines, plan, idempotencyKey, now));
+    }
+
+    /// <summary>How the ledger describes this order on the member's statement.</summary>
+    public string Description => _lines.Count == 1
+        ? $"Purchase — {_lines[0].BookTitle}"
+        : $"Purchase · {_lines.Count} titles";
+}

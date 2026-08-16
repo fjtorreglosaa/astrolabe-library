@@ -13,7 +13,7 @@ belonging to a single domain live in that domain's `tasks.md`.
 | Block ID | Description | Status |
 |---|---|---|
 | `BLOCK-001` | `PLAN-001` is in Draft. No implementation may begin until it is explicitly approved in writing, per SDD+ §13.2 step 3 | **Cleared 2026-08-15** — approved in writing |
-| `BLOCK-002` | `BR-STR-007` — the reward point redemption cap is undefined. The prototype shows a balance but never implements redemption, so arbitration does not apply. Blocks the `store` domain specs | Open |
+| `BLOCK-002` | `BR-STR-007` — the reward point redemption cap is undefined. The prototype shows a balance but never implements redemption, so arbitration does not apply. **Scope narrowed 2026-08-16: it blocks redemption only.** Earning is specified and built, so no value is lost while the question is open — the balance simply accumulates | Open |
 | `BLOCK-003` | Anthropic and OpenAI API keys are not available. Blocks `recommendations` implementation, not its specs | Open |
 | `BLOCK-006` | The Mailgun **sandbox domain only delivers to recipients authorised in the Mailgun dashboard**. Registration cannot be tested with arbitrary addresses until a verified domain is configured, or the test addresses are authorised | Open |
 | `BLOCK-004` | The *Devices and sessions* screen does not exist in the prototype and needs a design review before acceptance. Blocks acceptance of `IDN` session tasks, not their implementation | Open |
@@ -33,7 +33,8 @@ belonging to a single domain live in that domain's `tasks.md`.
 | `GLOBAL-006` | Correct `GUIDELINES.md` §10 — presentation project renamed `Astrolabe.Presentation` | ✅ | — | — | Done 2026-08-15. All `LibraryManagement.*` names replaced with `Astrolabe.*`. §8 also updated to show `sdd_strategy/` |
 | `GLOBAL-007` | Propose a frontend stack section for `SDD_PLIUS_STRATEGY.md` §9.2 | ⬜ | — | — | SDD+ §9 documents .NET only. Recorded meanwhile in `global_tech_spec.md` §2 |
 | `GLOBAL-008` | Approve container-backed integration tests as an exception to EF InMemory | ⬜ | — | — | Migrations and PostgreSQL behaviour cannot be validated on InMemory. See `global_tech_spec.md` §5 |
-| `GLOBAL-009` | Define `BR-STR-007` — reward point redemption cap | ⬜ | `BLOCK-002` | — | Proposal on the table: 50% of the order total |
+| `GLOBAL-009` | Define `BR-STR-007` — reward point redemption cap | ⬜ | `BLOCK-002` | — | Proposal on the table: 50% of the order total. Earning is built and accumulating, so nothing is lost while this waits |
+| `GLOBAL-010` | **Resolve: are points earned on the pre- or post-discount total?** | ⬜ | — | — | Raised 2026-08-16. `BR-STR-006` says post-discount; PLAN-001's acceptance example says $150 at 15% accrues $1.00, which is the pre-discount figure. The rule gives 85 point-cents, the example 100. **Built to the rule.** Reply "post-discount" to keep it or "pre-discount" to change `RewardPointsPolicy` and its tests |
 | `GLOBAL-010` | Scaffold the .NET solution, frontend, and Docker composition | ✅ | — | — | Completed 2026-08-15. Four services healthy under `docker compose up`; 53 tests green |
 | `GLOBAL-013` | Decide the MediatR licence position | ✅ | — | — | Resolved 2026-08-15. Pinned to 12.5.0 in `Directory.Packages.props`, licence verified Apache-2.0 from the package manifest. FluentAssertions pinned to 7.2.0 for the same reason |
 | `GLOBAL-015` | Evaluate domain split: `identity` | ✅ | — | — | **Deferred by written approval 2026-08-15.** Threshold breached at 33 business rules (limit 20). Revisit after Stage 1 ships. The `identity` / `sessions` boundary is recorded below so the split stays cheap |
@@ -163,6 +164,7 @@ the original `catalog` / `reviews` split.
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | PLAN-001 Stage 5 | AI Agent — Claude | `store` closed, 16/16. Redemption left unbuilt on `BLOCK-002`. **PLAN-001's own acceptance example disagrees with `BR-STR-006`** — see `GLOBAL-010` |
 | 2026-08-16 | PLAN-001 Stage 4 | AI Agent — Claude | `billing` closed, 22/22. The plan's acceptance criterion verified live: 20 days overdue is exactly $7.00 and 26 days is capped at $9.00 |
 | 2026-08-16 | PLAN-001 Stage 3 | AI Agent — Claude | `reservations` closed, 20/20. The mandatory race for the last copy was run ten times against the running system: ten correct outcomes, never a negative count |
 | 2026-08-16 | `GLOBAL-020` | AI Agent — Claude | Audit promoted to its own bounded context. Five `network` handlers stopped injecting `IIdentityUnitOfWork` for a single row, and `catalog` can now satisfy BR-CAT-025 without knowing identity exists |

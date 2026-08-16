@@ -3,6 +3,7 @@ using Astrolabe.Domain.Features.Billing.Repositories;
 using Astrolabe.Domain.Features.Catalog.Repositories;
 using Astrolabe.Domain.Features.Membership.Repositories;
 using Astrolabe.Domain.Features.Reservations.Repositories;
+using Astrolabe.Domain.Features.Store.Repositories;
 using Astrolabe.Domain.Features.Identity.Repositories;
 using Astrolabe.Domain.Features.Network.Repositories;
 using Moq;
@@ -201,4 +202,34 @@ public sealed class BillingUnitOfWorkMock
     public int Saved { get; private set; }
 
     public IBillingUnitOfWork Object => Mock.Object;
+}
+
+/// <summary>The store context, alongside the catalogue it prices from.</summary>
+public sealed class StoreUnitOfWorkMock
+{
+    public StoreUnitOfWorkMock()
+    {
+        Mock.SetupGet(u => u.Orders).Returns(() => Orders.Object);
+        Mock.SetupGet(u => u.Points).Returns(() => Points.Object);
+        Mock.SetupGet(u => u.Books).Returns(() => Books.Object);
+        Mock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1)
+            .Callback(() => Saved++);
+
+        Books.Setup(r => r.GetByIdsWithCopiesAsync(
+                It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+    }
+
+    public Mock<IStoreUnitOfWork> Mock { get; } = new();
+
+    public Mock<IOrderRepository> Orders { get; } = new();
+
+    public Mock<IPointsRepository> Points { get; } = new();
+
+    public Mock<IBookRepository> Books { get; } = new();
+
+    public int Saved { get; private set; }
+
+    public IStoreUnitOfWork Object => Mock.Object;
 }

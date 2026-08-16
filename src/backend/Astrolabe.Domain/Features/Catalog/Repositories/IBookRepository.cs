@@ -11,6 +11,16 @@ public interface IBookRepository : IRepository<Book>
     /// <summary>The book with its copies loaded, for any operation that touches stock or access.</summary>
     Task<Book?> GetWithCopiesAsync(Guid bookId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Several books with their copies, in one query.
+    ///
+    /// Exists because pricing a purchase needs to know where each book is held, and the generic
+    /// <c>GetByIdsAsync</c> does not load the copies. Using that one instead makes every book look
+    /// as though no library holds it, which silently turns every plan discount into zero.
+    /// </summary>
+    Task<IReadOnlyList<Book>> GetByIdsWithCopiesAsync(
+        IReadOnlyCollection<Guid> bookIds, CancellationToken cancellationToken = default);
+
     /// <summary>Backs BR-CAT-003. The unique index is the real guard; this gives a clean error first.</summary>
     Task<bool> ExistsWithIsbnAsync(string normalisedIsbn, CancellationToken cancellationToken = default);
 

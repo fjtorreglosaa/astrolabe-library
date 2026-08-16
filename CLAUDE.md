@@ -292,7 +292,8 @@ Domains currently under growth watch: `catalog`, `billing`, `identity`.
 | 2 | `membership`, `catalog` | ✅ Done — 18/18 and 22/22 |
 | 3 | `reservations` | ✅ Done — 20/20 |
 | 4 | `billing` | ✅ Done — 22/22 |
-| 5–9 | — | Not started |
+| 5 | `store` | ✅ Done — 16/16 · redemption blocked on `BLOCK-002` |
+| 6–9 | — | Not started |
 
 Open decisions awaiting the user:
 
@@ -302,6 +303,10 @@ Open decisions awaiting the user:
   role now mirrors it, so one fact has two representations.
 - `BLOCK-004` — the Devices and sessions screen has no approved design.
 - `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients.
+- `GLOBAL-009` — define the reward point redemption cap (`BR-STR-007`). Earning is built and
+  accumulating; spending is not possible until this is decided.
+- `GLOBAL-010` — are points earned on the pre- or post-discount total? `BR-STR-006` says
+  post-discount and the plan's own example says pre-. Built to the rule.
 - `NET-025` — `BR-NET-005` is half-enforced; the library obligations probe always answers "none".
   Stage 3 makes this reachable: a library can now hold live reservations, so deactivating one is no
   longer harmless. Worth closing before Stage 6 touches the network screens.
