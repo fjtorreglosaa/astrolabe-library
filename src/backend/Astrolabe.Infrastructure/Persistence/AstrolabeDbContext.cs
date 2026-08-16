@@ -7,6 +7,7 @@ using Astrolabe.Domain.Features.Catalog.Entities;
 using Astrolabe.Domain.Features.Identity.Entities;
 using Astrolabe.Domain.Features.Membership.Entities;
 using Astrolabe.Domain.Features.Network.Entities;
+using Astrolabe.Domain.Features.Reservations.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Astrolabe.Infrastructure.Persistence;
@@ -51,6 +52,8 @@ public sealed class AstrolabeDbContext(
     public DbSet<BookCopy> BookCopies => Set<BookCopy>();
 
     public DbSet<Review> Reviews => Set<Review>();
+
+    public DbSet<Reservation> Reservations => Set<Reservation>();
 
     /// <summary>
     /// Commits, then publishes whatever the aggregates raised.

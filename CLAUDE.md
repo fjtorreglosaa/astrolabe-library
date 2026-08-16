@@ -285,7 +285,8 @@ Domains currently under growth watch: `catalog`, `billing`, `identity`.
 | 0 | Scaffolding, Docker composition | ✅ Done |
 | 1 | `identity`, `network` | ✅ Done — 42/42 and 23/25 |
 | 2 | `membership`, `catalog` | ✅ Done — 18/18 and 22/22 |
-| 3–9 | — | Not started |
+| 3 | `reservations` | ✅ Done — 20/20 |
+| 4–9 | — | Not started |
 
 Open decisions awaiting the user:
 
@@ -296,3 +297,5 @@ Open decisions awaiting the user:
 - `BLOCK-004` — the Devices and sessions screen has no approved design.
 - `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients.
 - `NET-025` — `BR-NET-005` is half-enforced; the library obligations probe always answers "none".
+  Stage 3 makes this reachable: a library can now hold live reservations, so deactivating one is no
+  longer harmless. Worth closing before Stage 6 touches the network screens.

@@ -21,6 +21,7 @@ import type { Membership } from '../../membership/api/membershipApi';
 import { money } from '../../membership/planCopy';
 import { getBook, getReviews, publishReview, removeReview } from '../api/catalogApi';
 import { GENRE_LABEL, bookBadgeLabel, copyReasonLabel } from '../catalogCopy';
+import { ReserveDialog } from '../../reservations/components/ReserveDialog';
 import { BookCover } from './BookCover';
 
 /**
@@ -40,6 +41,7 @@ export const BookDetailDialog = ({ bookId, membership, onClose }: BookDetailDial
   const queryClient = useQueryClient();
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState('');
+  const [reserving, setReserving] = useState(false);
 
   const book = useQuery({
     queryKey: ['catalog', 'book', bookId],
@@ -152,6 +154,7 @@ export const BookDetailDialog = ({ bookId, membership, onClose }: BookDetailDial
                     variant="contained"
                     disabled={!book.data.canReserve}
                     sx={{ alignSelf: 'flex-start' }}
+                    onClick={() => setReserving(true)}
                   >
                     {book.data.canReserve ? 'Reserve' : 'Unavailable'}
                   </Button>
@@ -272,6 +275,17 @@ export const BookDetailDialog = ({ bookId, membership, onClose }: BookDetailDial
           </DialogContent>
         </>
       )}
+
+      {/* Nested rather than opened from the catalogue page, so the member keeps the book they were
+          reading behind the confirmation and can step back to it. */}
+      <ReserveDialog
+        bookId={reserving && book.data ? book.data.id : null}
+        onClose={() => setReserving(false)}
+        onReserved={() => {
+          setReserving(false);
+          onClose();
+        }}
+      />
     </Dialog>
   );
 };

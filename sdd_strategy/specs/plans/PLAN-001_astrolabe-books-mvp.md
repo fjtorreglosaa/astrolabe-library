@@ -531,7 +531,8 @@ No stage is destructive; the MVP is greenfield. Rollback is per stage:
 | GLOBAL-005 — Scaffold solution, frontend, and Docker composition | `global_task_spec.md` | ✅ Done — Stage 0 complete |
 | Stage 1 — `identity` and `network` | `identity.tasks.md`, `network.tasks.md` | ✅ Done — 42/42 and 23/25 |
 | Stage 2 — `membership` and `catalog` | `membership.tasks.md`, `catalog.tasks.md` | ✅ Done — 18/18 and 22/22, closed 2026-08-16 |
-| Stages 3–9 | Per-domain `tasks.md` | ⬜ Not started |
+| Stage 3 — `reservations` | `reservations.tasks.md` | ✅ Done — 20/20, closed 2026-08-16 |
+| Stages 4–9 | Per-domain `tasks.md` | ⬜ Not started |
 
 ---
 

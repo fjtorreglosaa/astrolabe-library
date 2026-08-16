@@ -14,6 +14,7 @@ using Astrolabe.Domain.Features.Catalog.Repositories;
 using Astrolabe.Domain.Features.Identity.Repositories;
 using Astrolabe.Domain.Features.Membership.Repositories;
 using Astrolabe.Domain.Features.Network.Repositories;
+using Astrolabe.Domain.Features.Reservations.Repositories;
 using Astrolabe.Infrastructure.Persistence;
 using Astrolabe.Infrastructure.Persistence.Repositories;
 using Astrolabe.Infrastructure.Persistence.Repositories.Audit;
@@ -21,6 +22,7 @@ using Astrolabe.Infrastructure.Persistence.Repositories.Catalog;
 using Astrolabe.Infrastructure.Persistence.Repositories.Identity;
 using Astrolabe.Infrastructure.Persistence.Repositories.Membership;
 using Astrolabe.Infrastructure.Persistence.Repositories.Network;
+using Astrolabe.Infrastructure.Persistence.Repositories.Reservations;
 using Astrolabe.Infrastructure.Persistence.Seeding;
 using Astrolabe.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
@@ -94,10 +96,12 @@ public static class DependencyInjection
         services.AddScoped<IMembershipUnitOfWork, MembershipUnitOfWork>();
         services.AddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
         services.AddScoped<IAuditUnitOfWork, AuditUnitOfWork>();
+        services.AddScoped<IReservationUnitOfWork, ReservationUnitOfWork>();
 
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<IBookRepository, BookRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.AddScoped<IReservationRepository, ReservationRepository>();
 
         services.AddScoped<ICountryRepository, CountryRepository>();
         services.AddScoped<ICityRepository, CityRepository>();

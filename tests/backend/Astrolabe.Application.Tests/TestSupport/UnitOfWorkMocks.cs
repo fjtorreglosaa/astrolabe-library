@@ -1,6 +1,7 @@
 using Astrolabe.Domain.Features.Audit.Repositories;
 using Astrolabe.Domain.Features.Catalog.Repositories;
 using Astrolabe.Domain.Features.Membership.Repositories;
+using Astrolabe.Domain.Features.Reservations.Repositories;
 using Astrolabe.Domain.Features.Identity.Repositories;
 using Astrolabe.Domain.Features.Network.Repositories;
 using Moq;
@@ -135,4 +136,30 @@ public sealed class CatalogUnitOfWorkMock
     public int Saved { get; private set; }
 
     public ICatalogUnitOfWork Object => Mock.Object;
+}
+
+/// <summary>
+/// The reservations context. It exposes the book repository as well as its own, because taking a
+/// copy and recording who took it is one atomic fact.
+/// </summary>
+public sealed class ReservationUnitOfWorkMock
+{
+    public ReservationUnitOfWorkMock()
+    {
+        Mock.SetupGet(u => u.Reservations).Returns(() => Reservations.Object);
+        Mock.SetupGet(u => u.Books).Returns(() => Books.Object);
+        Mock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1)
+            .Callback(() => Saved++);
+    }
+
+    public Mock<IReservationUnitOfWork> Mock { get; } = new();
+
+    public Mock<IReservationRepository> Reservations { get; } = new();
+
+    public Mock<IBookRepository> Books { get; } = new();
+
+    public int Saved { get; private set; }
+
+    public IReservationUnitOfWork Object => Mock.Object;
 }

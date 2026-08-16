@@ -163,6 +163,7 @@ the original `catalog` / `reviews` split.
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | PLAN-001 Stage 3 | AI Agent — Claude | `reservations` closed, 20/20. The mandatory race for the last copy was run ten times against the running system: ten correct outcomes, never a negative count |
 | 2026-08-16 | `GLOBAL-020` | AI Agent — Claude | Audit promoted to its own bounded context. Five `network` handlers stopped injecting `IIdentityUnitOfWork` for a single row, and `catalog` can now satisfy BR-CAT-025 without knowing identity exists |
 | 2026-08-15 | `GLOBAL-001` | Francisco Torregrosa | Precedence approved: prototype → SDD+ → GUIDELINES |
 | 2026-08-15 | `GLOBAL-002` | Francisco Torregrosa | G1 ADRs in `technical.md`; G2 per-layer coverage; G3 no pipeline behaviors; G4 `.Presentation`; G5 InMemory with a proposed exception; G6 frontend stack in `global_tech_spec.md` |

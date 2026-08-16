@@ -8,6 +8,8 @@ import { DevicesAndSessionsPage } from '../features/sessions/pages/DevicesAndSes
 import { AppLayout } from '../layouts/AppLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { CatalogPage } from '../features/catalog/pages/CatalogPage';
+import { HomePage } from '../features/reservations/pages/HomePage';
+import { LoansPage } from '../features/reservations/pages/LoansPage';
 import { MembershipPage } from '../features/membership/pages/MembershipPage';
 import { PlaceholderScreen } from '../shared/components/PlaceholderScreen';
 
@@ -29,9 +31,9 @@ export const AppRoutes = () => (
 
     <Route element={<ProtectedRoute />}>
       <Route element={<AppLayout />}>
-        <Route path="/home" element={<PlaceholderScreen title="Home" stage="Stage 3" />} />
+        <Route path="/home" element={<HomePage />} />
         <Route path="/catalog" element={<CatalogPage />} />
-        <Route path="/loans" element={<PlaceholderScreen title="Book Reservations" stage="Stage 3" />} />
+        <Route path="/loans" element={<LoansPage />} />
         <Route path="/fines" element={<PlaceholderScreen title="Fines & payments" stage="Stage 4" />} />
         <Route path="/purchases" element={<PlaceholderScreen title="My purchases" stage="Stage 5" />} />
         <Route path="/support" element={<PlaceholderScreen title="Help & support" stage="Stage 9" />} />
