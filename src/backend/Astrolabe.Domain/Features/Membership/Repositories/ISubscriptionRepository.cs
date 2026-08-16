@@ -1,5 +1,6 @@
 using Astrolabe.Domain.Abstractions.Persistence;
 using Astrolabe.Domain.Features.Membership.Entities;
+using Astrolabe.Domain.Features.Membership.Enums;
 
 namespace Astrolabe.Domain.Features.Membership.Repositories;
 
@@ -12,6 +13,17 @@ public interface ISubscriptionRepository : IRepository<Subscription>
     /// </summary>
     Task<Subscription?> GetActiveForMemberAsync(
         Guid memberId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The active plan of each named member, for a listing.
+    ///
+    /// One query rather than a call per row: the user directory shows a plan on every line, and
+    /// asking per member would be twenty round trips for a page of twenty. Members with no
+    /// subscription are simply absent from the result rather than defaulted, so the caller can tell
+    /// "no subscription" from "Basic".
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, PlanTier>> GetActivePlansForAsync(
+        IReadOnlyCollection<Guid> memberIds, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Active subscriptions whose renewal date has passed, for the sweep that applies scheduled

@@ -63,8 +63,8 @@ public sealed class BillingHandlerTests
         _locations.Setup(l => l.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, BookProjection.LibraryLocation>
             {
-                [Midtown] = new(Midtown, "Midtown", CityId, "New York"),
-                [Loop] = new(Loop, "Loop", Guid.NewGuid(), "Chicago"),
+                [Midtown] = new(Midtown, "Midtown", CityId, "New York", IsActive: true),
+                [Loop] = new(Loop, "Loop", Guid.NewGuid(), "Chicago", IsActive: true),
             });
 
         _scope = new Mock<ILibraryScopeProvider>();
@@ -413,8 +413,4 @@ public sealed class BillingHandlerTests
             r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
-    {
-        public DateTimeOffset UtcNow => now;
-    }
 }

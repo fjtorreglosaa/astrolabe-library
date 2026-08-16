@@ -17,4 +17,13 @@ public interface ILibraryLocationProvider
     /// </summary>
     Task<IReadOnlyDictionary<Guid, BookProjection.LibraryLocation>> GetAllAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Each city's designated home library, keyed by city. BR-NET-003 guarantees exactly one.
+    ///
+    /// Here rather than on <c>LibraryLocation</c> because it is a fact about a city, not about a
+    /// library, and hanging it off every library row would repeat it once per branch.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, Guid>> GetHomeLibraryByCityAsync(
+        CancellationToken cancellationToken = default);
 }

@@ -168,7 +168,7 @@ Screens: `login`, `signup` (with the three-column plan selector and cascading co
 `verify` (*Check your inbox*), and `settings → Devices and sessions`.
 
 **The sessions screen does not exist in the prototype.** It is the one surface in this domain with no
-approved design, tracked as `BLOCK-004`. It must be designed in the prototype's visual language and
+approved design, tracked as `BLOCK-004` and settled by review on 2026-08-16 (`GLOBAL-011`). It is designed in the prototype's visual language and
 reviewed before the domain is accepted.
 
 Demo accounts, password `Testing1234*` for all three:

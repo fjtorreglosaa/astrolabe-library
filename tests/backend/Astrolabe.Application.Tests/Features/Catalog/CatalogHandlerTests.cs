@@ -64,7 +64,7 @@ public sealed class CatalogHandlerTests
         _locations.Setup(l => l.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, BookProjection.LibraryLocation>
             {
-                [LibraryId] = new(LibraryId, "Midtown", CityId, "New York")
+                [LibraryId] = new(LibraryId, "Midtown", CityId, "New York", IsActive: true)
             });
     }
 
@@ -304,8 +304,4 @@ public sealed class CatalogHandlerTests
         result.Error.Should().Be(CatalogErrors.BookNotFound);
     }
 
-    private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
-    {
-        public DateTimeOffset UtcNow => now;
-    }
 }

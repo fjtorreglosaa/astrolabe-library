@@ -18,6 +18,7 @@ namespace Astrolabe.Infrastructure.Features.Network;
 public sealed class LibraryLocationProvider(AstrolabeDbContext context) : ILibraryLocationProvider
 {
     private IReadOnlyDictionary<Guid, BookProjection.LibraryLocation>? _memoised;
+    private IReadOnlyDictionary<Guid, Guid>? _memoisedHomeLibraries;
 
     public async Task<IReadOnlyDictionary<Guid, BookProjection.LibraryLocation>> GetAllAsync(
         CancellationToken cancellationToken = default)
@@ -37,5 +38,27 @@ public sealed class LibraryLocationProvider(AstrolabeDbContext context) : ILibra
         _memoised = rows.ToDictionary(row => row.LibraryId);
 
         return _memoised;
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, Guid>> GetHomeLibraryByCityAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (_memoisedHomeLibraries is not null)
+        {
+            return _memoisedHomeLibraries;
+        }
+
+        // A city without a designated home library is a BR-NET-003 violation rather than a normal
+        // state, but it is skipped instead of throwing: a directory listing is not the place to
+        // discover it, and a null would only crash the screen that reports the problem.
+        var rows = await context.Cities
+            .AsNoTracking()
+            .Where(city => city.HomeLibraryId != null)
+            .Select(city => new { city.Id, HomeLibraryId = city.HomeLibraryId!.Value })
+            .ToListAsync(cancellationToken);
+
+        _memoisedHomeLibraries = rows.ToDictionary(row => row.Id, row => row.HomeLibraryId);
+
+        return _memoisedHomeLibraries;
     }
 }

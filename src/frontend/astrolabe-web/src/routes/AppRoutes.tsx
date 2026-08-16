@@ -16,6 +16,7 @@ import { HomePage } from '../features/reservations/pages/HomePage';
 import { LoansPage } from '../features/reservations/pages/LoansPage';
 import { MembershipPage } from '../features/membership/pages/MembershipPage';
 import { PlaceholderScreen } from '../shared/components/PlaceholderScreen';
+import { AdminUsersPage } from '../features/users/pages/AdminUsersPage';
 
 /**
  * The route table.
@@ -51,7 +52,7 @@ export const AppRoutes = () => (
         </Route>
 
         <Route element={<RoleGuard allow={StaffRoles} />}>
-          <Route path="/admin/users" element={<PlaceholderScreen title="Users" stage="Stage 6" />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/books" element={<PlaceholderScreen title="Book management" stage="Stage 6" />} />
           <Route path="/admin/payments" element={<AdminPaymentsPage />} />
           <Route path="/admin/support" element={<PlaceholderScreen title="Support tickets" stage="Stage 9" />} />

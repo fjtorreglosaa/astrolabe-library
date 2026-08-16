@@ -1,7 +1,7 @@
 # Identity — Tasks
 
 **Last reviewed:** 2026-08-16
-**Overall progress:** 42/42 (100%)
+**Overall progress:** 49/49 (100%)
 
 Built after `network`, because registration validates a country and city that must already exist.
 
@@ -11,7 +11,7 @@ Built after `network`, because registration validates a country and city that mu
 
 | Block ID | Description | Status |
 |---|---|---|
-| `BLOCK-004` | The *Devices and sessions* screen does not exist in the prototype. Blocks acceptance of `IDN-035`, not its implementation | Open |
+| `BLOCK-004` | The *Devices and sessions* screen does not exist in the prototype. Blocks acceptance of `IDN-035`, not its implementation | Resolved 2026-08-16 (`GLOBAL-011`) |
 | `BLOCK-006` | The Mailgun sandbox domain only delivers to recipients authorised in the dashboard. **Registration cannot be tested end to end with arbitrary addresses.** Blocks verification of the registration email only | Open |
 | `NET-013` | The network seed must exist before registration can resolve a country and city | **Cleared** — seeded and verified |
 
@@ -88,10 +88,18 @@ Built after `network`, because registration validates a country and city that mu
 | `IDN-039` | `login`, `signup`, `verify` screens | ✅ | `IDN-037` | — | Copy taken verbatim from the prototype |
 | `IDN-040` | `AuthProvider`, `useAuth`, `ProtectedRoute`, `RoleGuard` | ✅ | `IDN-037` | — | Backend authorization stays mandatory |
 | `IDN-041` | Role-driven sidebar composition | ✅ | `IDN-040` | — | `routes/navigation.ts` already declares `visibleTo` |
-| `IDN-042` | *Devices and sessions* screen | ✅ | — | — | **Not in the prototype.** Built in its visual language; **`BLOCK-004` still open — needs your design review** |
+| `IDN-042` | *Devices and sessions* screen | ✅ | — | `DevicesAndSessionsPage.tsx` | **Not in the prototype.** Design settled by review 2026-08-16 (`GLOBAL-011`), which also found and fixed the device-icon defect |
 
 > The Axios single-flight refresh queue was delivered in Stage 0 and already satisfies the
 > concurrent-refresh edge case. No task is needed for it.
+
+| `IDN-043` | `UserAdministrationPolicy` — who may administer whom | ✅ | — | `UserAdministrationPolicy` | Transcribed from the prototype's `canManage`. 9 tests |
+| `IDN-044` | `SearchUsersQuery` — the staff directory, scoped | ✅ | `IDN-043` | `SearchUsersQuery` | City-scoped per `BR-NET-010`. Filters, search, sort, paging from the prototype's table |
+| `IDN-045` | `GetUserDetailQuery` and `IMemberActivityProbe` | ✅ | `IDN-044` | `MemberActivityProbe` | The detail panel's four statistics, across `reservations`, `billing` and `store` |
+| `IDN-046` | `AdministerUserCommand` — block, unblock, delete, restore | ✅ | `IDN-043` | `AdministerUserCommand` | One command, four actions: they share every guard, and four handlers would be four places for it to drift |
+| `IDN-047` | `ResendVerificationForUserCommand` | ✅ | `IDN-046` | — | Staff-triggered and by identifier, so unlike the anonymous one it may say when it did nothing |
+| `IDN-048` | `UsersController` | ✅ | `IDN-047` | `UsersController` | `StaffOnly` is the outer door; scope is decided inside each handler |
+| `IDN-049` | `admin-users` screen | ✅ | `IDN-048` | `AdminUsersPage.tsx` | Table, status chips, search, sort, paging and a detail drawer, transcribed from the prototype |
 
 ### Status values
 
@@ -126,6 +134,8 @@ Every `BR-IDN-*` rule needs at least one test. These carry the most risk:
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | `IDN-043` to `IDN-049` | AI Agent — Claude | **PLAN-001 Stage 6 — the user directory.** The one part of Stage 6 with no backend at all: `catalog` and `network` already had their commands, this had none. Authority transcribed from the prototype's `canManage`; **scope decided by `BR-NET-010`**, not by guess — an administrator with no assignments must see no administrative data, so an unscoped directory was never an option. Members are scoped by *city*, the finest honest granularity, since nothing ties a member to one library. Verified against the running system: the demo administrator sees 2 New York members and neither Chicago nor Austin, and gets 403 acting across scope, 409 on their own account and 403 on a super administrator. 24 tests |
+| 2026-08-16 | `GLOBAL-011` | AI Agent — Claude | **`BLOCK-004` closed.** The *Devices and sessions* screen was reviewed and its design settled: a security screen, not a settings one — current device pinned first, sign-in date beside last-seen so an unfamiliar device is identifiable, destructive action on the row. The review found a defect live since Stage 1: `deviceType` was typed `number` and matched against `1|2|3|4` while the API sends `"Web"`, so every row rendered the fallback icon. Confirmed against the running API. `DeviceType` and `RevocationScope` are now named types; 6 regression tests |
 | 2026-08-16 | `GLOBAL-019` | AI Agent — Claude | **Plan tiers removed from `UserRole`.** The enum is now `Member`/`Admin`/`SuperAdmin` and says nothing about what a member bought. `User.Register` takes a `PlanTier` and always produces a member, so registering directly into staff authority no longer type-checks; `User.ChangePlan` deleted; `UserRegistered` carries the chosen plan. Policies bind with `nameof` rather than string literals. Auth request records moved out of `AuthController.cs` into `Contracts/Identity/`, and `Policies` out of `AuthenticationExtensions.cs` — one public type per file |
 | 2026-08-15 | — | AI Agent — Claude | **Architecture review, `GLOBAL-016` and `GLOBAL-017`.** `identity` moved under `Features/` in all three layers; handlers now depend on `IIdentityUnitOfWork` instead of individual repositories. No business rule changed; 265 tests green throughout |
 | 2026-08-15 | `IDN-001` | AI Agent — Claude | `Email` normalised at construction, `PasswordHash` and `SecretHash` both redacting in `ToString`, `DeviceDescriptor` truncating an attacker-controlled user agent |

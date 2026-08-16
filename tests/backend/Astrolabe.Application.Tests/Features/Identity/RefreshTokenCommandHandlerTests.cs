@@ -55,10 +55,6 @@ public sealed class RefreshTokenCommandHandlerTests
     private RefreshTokenCommandHandler CreateHandler() => new(
         _identity.Object, _auditTrail.Object, _tokenGenerator.Object, new FixedClock(Now));
 
-    private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
-    {
-        public DateTimeOffset UtcNow => now;
-    }
 
     private static User AnActiveUser()
     {

@@ -79,6 +79,42 @@ public static class IdentityErrors
 
     // ---------- Sessions ----------
 
+    // ---------- The user directory, Stage 6 ----------
+
+    /// <summary>
+    /// Ahead of every other refusal. Blocking your own account is the one mistake in this console
+    /// that cannot be undone from inside it.
+    /// </summary>
+    public static readonly Error CannotAdministerYourself =
+        Error.Conflict("identity.cannot_administer_yourself",
+            "This is your own account. You cannot block or delete yourself.");
+
+    public static readonly Error StaffRequired =
+        Error.Authorization("identity.staff_required",
+            "Only staff can administer accounts.");
+
+    /// <summary>BR-NET-012. The network must never be left without a super administrator.</summary>
+    public static readonly Error CannotAdministerASuperAdmin =
+        Error.Authorization("identity.cannot_administer_a_super_admin",
+            "Super administrators cannot be blocked or deleted from this console.");
+
+    /// <summary>BR-NET-008, reached sideways. An administrator must not manage another.</summary>
+    public static readonly Error SuperAdminRequiredForStaff =
+        Error.Authorization("identity.super_admin_required_for_staff",
+            "Only a super administrator can block or delete another administrator.");
+
+    /// <summary>
+    /// BR-NET-006 and BR-NET-010. Distinct from "not found": a super administrator asking for the
+    /// same account gets it, so the account plainly exists.
+    /// </summary>
+    public static readonly Error AccountOutOfScope =
+        Error.Authorization("identity.account_out_of_scope",
+            "That account belongs to a city you do not administer.");
+
+    public static readonly Error AccountNotPendingVerification =
+        Error.Conflict("identity.account_not_pending_verification",
+            "That account has already been verified.");
+
     public static readonly Error SessionNotFound =
         Error.NotFound("identity.session_not_found", "Session not found.");
 

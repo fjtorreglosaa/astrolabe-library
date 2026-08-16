@@ -196,8 +196,4 @@ public sealed class PlanChangeHandlerTests
         result.Value.AmountDueCents.Should().BeGreaterThan(0);
     }
 
-    private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
-    {
-        public DateTimeOffset UtcNow => now;
-    }
 }

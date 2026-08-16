@@ -84,6 +84,7 @@ public static class DependencyInjection
 
         // Placeholder until catalog, reservations and billing exist. See NET-025.
         services.AddScoped<ILibraryObligationsProbe, LibraryObligationsProbe>();
+        services.AddScoped<IMemberActivityProbe, MemberActivityProbe>();
         services.AddEmail(configuration);
 
         return services;

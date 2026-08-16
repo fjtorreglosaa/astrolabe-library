@@ -37,10 +37,6 @@ public sealed class SignInAndSessionHandlerTests
 
     private static CancellationToken Ct => TestContext.CurrentContext.CancellationToken;
 
-    private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
-    {
-        public DateTimeOffset UtcNow => now;
-    }
 
     [SetUp]
     public void SetUp()
