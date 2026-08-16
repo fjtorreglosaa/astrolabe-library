@@ -140,6 +140,16 @@ public sealed class Book : AggregateRoot
         return Result.Success();
     }
 
+    /// <summary>
+    /// Points the book at its cover, or at nothing. BR-CAT-005.
+    ///
+    /// Separate from <see cref="UpdateDetails"/> because uploading a picture is not editing a book:
+    /// it happens on its own screen, at its own moment, and routing it through the details path
+    /// would make every cover change re-validate a title and a price that nobody touched.
+    /// </summary>
+    public void SetCoverUrl(string? coverUrl) =>
+        CoverUrl = string.IsNullOrWhiteSpace(coverUrl) ? null : coverUrl.Trim();
+
     // ---------- Lifecycle, BR-CAT-021 ----------
 
     public Result Publish(DateTimeOffset now)

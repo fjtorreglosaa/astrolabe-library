@@ -120,3 +120,26 @@ export const removeBook = async (
 export const restoreBook = async (bookId: string): Promise<void> => {
   await httpClient.post(`/api/v1/admin/catalog/books/${bookId}/restore`);
 };
+
+/**
+ * Uploads or replaces a cover. Multipart, not base64: an image sent as JSON grows by a third on the
+ * wire and has to exist as a string before it is anything else.
+ *
+ * Answers the URL the book now points at, so the caller can render it without refetching.
+ */
+export const setBookCover = async (bookId: string, file: File): Promise<string | null> => {
+  const body = new FormData();
+  body.append('file', file);
+
+  const { data } = await httpClient.put<{ coverUrl: string | null }>(
+    `/api/v1/admin/catalog/books/${bookId}/cover`,
+    body,
+  );
+
+  return data.coverUrl;
+};
+
+/** Removes it. The book falls back to its generated tint, which is a state and not a failure. */
+export const removeBookCover = async (bookId: string): Promise<void> => {
+  await httpClient.delete(`/api/v1/admin/catalog/books/${bookId}/cover`);
+};

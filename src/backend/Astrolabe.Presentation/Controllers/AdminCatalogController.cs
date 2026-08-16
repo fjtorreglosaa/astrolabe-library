@@ -15,6 +15,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Astrolabe.Presentation.Contracts.Common;
+using Astrolabe.Application.Features.Catalog.Commands.SetBookCover;
+using Astrolabe.Domain.Features.Catalog.Errors;
+using Astrolabe.Domain.Features.Catalog.Policies;
 
 namespace Astrolabe.Presentation.Controllers;
 
@@ -63,6 +66,49 @@ public sealed class AdminCatalogController(ISender sender) : ApiControllerBase(s
             ? CreatedAtAction(nameof(CreateBook), new { bookId = result.Value },
                 new CreatedResourceResponse(result.Value))
             : HandleFailure(result);
+    }
+
+    /// <summary>
+    /// Uploads or replaces a book's cover. BR-CAT-005.
+    ///
+    /// <para>
+    /// Multipart rather than a base64 field: an image sent as JSON grows by a third on the wire and
+    /// has to be held in memory as a string before it is anything else. The size cap is enforced
+    /// here as well as in the domain, so an oversized upload is refused before it is buffered.
+    /// </para>
+    /// </summary>
+    [HttpPut("books/{bookId:guid}/cover")]
+    [RequestSizeLimit(CoverImagePolicy.MaxBytes + 4096)]
+    [ProducesResponseType<CoverResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> SetCover(
+        Guid bookId, IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return HandleFailure(Result.Failure(CatalogErrors.CoverImageEmpty));
+        }
+
+        using var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer, cancellationToken);
+
+        var result = await Sender.Send(
+            new SetBookCoverCommand(bookId, file.ContentType, buffer.ToArray()), cancellationToken);
+
+        return result.IsSuccess ? Ok(new CoverResponse(result.Value)) : HandleFailure(result);
+    }
+
+    /// <summary>
+    /// Removes the cover. The book falls back to the tint BR-CAT-005 derives from it, which is a
+    /// normal state rather than a missing one — so this answers 200 with a null URL, not 204.
+    /// </summary>
+    [HttpDelete("books/{bookId:guid}/cover")]
+    [ProducesResponseType<CoverResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RemoveCover(Guid bookId, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(
+            new SetBookCoverCommand(bookId, null, null), cancellationToken);
+
+        return result.IsSuccess ? Ok(new CoverResponse(result.Value)) : HandleFailure(result);
     }
 
     [HttpPut("books/{bookId:guid}")]

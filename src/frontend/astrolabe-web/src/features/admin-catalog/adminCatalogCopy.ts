@@ -77,3 +77,27 @@ export const PUBLISH_NOTE = 'Publishing puts this book in front of members strai
 export const DISCARD_TITLE = 'Discard this book?';
 export const DISCARD_BODY =
   'Nothing here has been saved. Save it as a draft instead and you can finish it later.';
+
+// ---------- Cover images, BR-CAT-005 ----------
+
+/** The prototype's own limit. Mirrored server-side, which is the one that counts. */
+export const MAX_COVER_BYTES = 4 * 1024 * 1024;
+
+const ALLOWED_COVER_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export const isAllowedCoverType = (contentType: string): boolean =>
+  ALLOWED_COVER_TYPES.includes(contentType.toLowerCase());
+
+/** The prototype's wording, kept word for word. */
+export const COVER_NOT_AN_IMAGE = 'That file is not an image. Use JPG, PNG or WebP.';
+export const COVER_TOO_LARGE = 'That image is larger than 4 MB. Pick a smaller file.';
+
+export const COVER_HINT =
+  'JPG, PNG or WebP up to 4 MB. Portrait 3:4 looks best — the image is cropped to fit each card.';
+
+/**
+ * Said when no image is chosen. Phrased as a statement rather than an offer because BR-CAT-005 makes
+ * the colour a consequence of the book's identity, not something anybody picks.
+ */
+export const NO_IMAGE_NOTE =
+  'No image? The book keeps the colour shown, generated from its own identity so it always looks the same.';

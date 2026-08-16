@@ -23,8 +23,16 @@ import { useAuth } from '../features/auth/components/AuthProvider';
 import { UserMenu } from './UserMenu';
 import { AppFooter } from './AppFooter';
 import { NotificationBell } from '../features/notifications/components/NotificationBell';
+import { QuickActions } from './QuickActions';
+import { SidebarAiCard } from './SidebarAiCard';
 
 const DRAWER_WIDTH = 264;
+
+/**
+ * The collapsed rail. The prototype narrows the sidebar to 78px rather than hiding it, so the icons
+ * stay reachable — a navigation that disappears makes every jump a two-step act.
+ */
+const RAIL_WIDTH = 78;
 
 /**
  * The authenticated shell: top navbar, left sidebar, content, footer — the structure the prototype
@@ -45,28 +53,50 @@ export const AppLayout = () => {
   const sections = role ? sectionsFor(role, plan) : [];
 
   const drawerContent = (
-    <Box role="navigation" aria-label="Main navigation" sx={{ overflowY: 'auto' }}>
+    <Stack sx={{ height: '100%' }}>
+      <Box role="navigation" aria-label="Main navigation" sx={{ overflowY: 'auto', flex: 1 }}>
       {sections.map((section) => (
         <List
           key={section.label}
           dense
           subheader={
-            <ListSubheader disableSticky sx={{ bgcolor: 'transparent', fontWeight: 700 }}>
-              {section.label}
-            </ListSubheader>
+            sidebarOpen ? (
+              <ListSubheader disableSticky sx={{ bgcolor: 'transparent', fontWeight: 700 }}>
+                {section.label}
+              </ListSubheader>
+            ) : undefined
           }
         >
           {section.items.map((item) => (
-            <ListItemButton key={item.route} component={NavLink} to={item.route} sx={{ mx: 1 }}>
-              <ListItemIcon>
-                <MaterialSymbol name={item.icon} size={20} />
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
+            <Tooltip
+              key={item.route}
+              // Only in the rail. A tooltip repeating a label that is already on screen is noise.
+              title={sidebarOpen ? '' : item.label}
+              placement="right"
+            >
+              <ListItemButton
+                component={NavLink}
+                to={item.route}
+                sx={{
+                  mx: 1,
+                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                  px: sidebarOpen ? undefined : 1,
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: sidebarOpen ? undefined : 0 }}>
+                  <MaterialSymbol name={item.icon} size={20} />
+                </ListItemIcon>
+                {sidebarOpen ? <ListItemText primary={item.label} /> : null}
+              </ListItemButton>
+            </Tooltip>
           ))}
         </List>
       ))}
-    </Box>
+      </Box>
+
+      {/* Pinned to the foot, where the prototype puts it. */}
+      <SidebarAiCard collapsed={!sidebarOpen} />
+    </Stack>
   );
 
   return (
@@ -74,7 +104,7 @@ export const AppLayout = () => {
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <IconButton edge="start" onClick={toggleSidebar} aria-label="Toggle navigation" sx={{ mr: 1 }}>
-            <MaterialSymbol name="menu" size={22} />
+            <MaterialSymbol name={sidebarOpen ? 'menu_open' : 'menu'} size={22} />
           </IconButton>
 
           <Stack direction="row" spacing={1} sx={{ flexGrow: 1, alignItems: 'center' }}>
@@ -113,12 +143,18 @@ export const AppLayout = () => {
       </AppBar>
 
       <Drawer
-        variant="persistent"
-        open={sidebarOpen}
+        variant="permanent"
         sx={{
-          width: sidebarOpen ? DRAWER_WIDTH : 0,
+          width: sidebarOpen ? DRAWER_WIDTH : RAIL_WIDTH,
           flexShrink: 0,
-          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
+          whiteSpace: 'nowrap',
+          transition: (theme) => theme.transitions.create('width'),
+          '& .MuiDrawer-paper': {
+            width: sidebarOpen ? DRAWER_WIDTH : RAIL_WIDTH,
+            boxSizing: 'border-box',
+            overflowX: 'hidden',
+            transition: (theme) => theme.transitions.create('width'),
+          },
         }}
       >
         <Toolbar />
@@ -133,6 +169,8 @@ export const AppLayout = () => {
         </Box>
         <AppFooter />
       </Box>
+
+      <QuickActions />
     </Box>
   );
 };

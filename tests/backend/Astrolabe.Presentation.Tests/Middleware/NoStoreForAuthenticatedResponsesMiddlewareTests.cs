@@ -39,7 +39,11 @@ public sealed class NoStoreForAuthenticatedResponsesMiddlewareTests
         }
     }
 
-    private static async Task<HttpContext> InvokeAsync(bool authenticated)
+    private static Task<HttpContext> InvokeAsync(bool authenticated) =>
+        InvokeAsync(authenticated, alreadySetCacheControl: null);
+
+    private static async Task<HttpContext> InvokeAsync(
+        bool authenticated, string? alreadySetCacheControl)
     {
         var responseFeature = new CallbackRunningResponseFeature();
         var features = new FeatureCollection();
@@ -54,7 +58,17 @@ public sealed class NoStoreForAuthenticatedResponsesMiddlewareTests
                     authenticationType: "Bearer"));
         }
 
-        var middleware = new NoStoreForAuthenticatedResponsesMiddleware(_ => Task.CompletedTask);
+        var middleware = new NoStoreForAuthenticatedResponsesMiddleware(inner =>
+        {
+            // Stands in for a handler that has decided its own policy — the file endpoint is the
+            // only one that does.
+            if (alreadySetCacheControl is not null)
+            {
+                inner.Response.Headers.CacheControl = alreadySetCacheControl;
+            }
+
+            return Task.CompletedTask;
+        });
 
         await middleware.InvokeAsync(context);
 
@@ -100,5 +114,36 @@ public sealed class NoStoreForAuthenticatedResponsesMiddlewareTests
 
         context.Response.Headers.CacheControl.ToString().Should().BeEmpty();
         context.Response.Headers.Vary.ToString().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task AnExplicitPolicySetByTheHandlerSurvives()
+    {
+        // The book cover. Every reader receives identical bytes, and blanket revalidation would undo
+        // the whole reason the image is served separately from the listing — a page of twenty books
+        // would re-fetch twenty pictures on every search.
+        var context = await InvokeAsync(authenticated: true, alreadySetCacheControl: "private, max-age=86400");
+
+        context.Response.Headers.CacheControl.ToString().Should().Be("private, max-age=86400");
+    }
+
+    [Test]
+    public async Task AnExplicitPolicyStillGetsVary()
+    {
+        // Two readers behind one cache send different tokens for the same URL, whatever the
+        // directive says. Dropping this alongside the override would be the actual disclosure.
+        var context = await InvokeAsync(authenticated: true, alreadySetCacheControl: "private, max-age=86400");
+
+        context.Response.Headers.Vary.ToString().Should().Be("Authorization");
+    }
+
+    [Test]
+    public async Task AHandlerThatSaysNothingStillGetsNoStore()
+    {
+        // The default has to keep working, or the override would have quietly disabled the guard for
+        // every endpoint rather than for the one that asked.
+        var context = await InvokeAsync(authenticated: true, alreadySetCacheControl: null);
+
+        context.Response.Headers.CacheControl.ToString().Should().Contain("no-store");
     }
 }

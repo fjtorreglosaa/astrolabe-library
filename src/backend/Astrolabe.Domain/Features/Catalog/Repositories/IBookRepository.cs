@@ -8,6 +8,16 @@ namespace Astrolabe.Domain.Features.Catalog.Repositories;
 /// <summary>Persistence for <see cref="Book"/>.</summary>
 public interface IBookRepository : IRepository<Book>
 {
+    /// <summary>
+    /// The stored cover for a book, or null. Kept off <c>Book</c> on purpose — see
+    /// <see cref="Entities.BookCoverImage"/> — so a listing never drags image bytes with it.
+    /// </summary>
+    Task<BookCoverImage?> GetCoverAsync(Guid bookId, CancellationToken cancellationToken = default);
+
+    Task AddCoverAsync(BookCoverImage cover, CancellationToken cancellationToken = default);
+
+    void RemoveCover(BookCoverImage cover);
+
     /// <summary>The book with its copies loaded, for any operation that touches stock or access.</summary>
     Task<Book?> GetWithCopiesAsync(Guid bookId, CancellationToken cancellationToken = default);
 

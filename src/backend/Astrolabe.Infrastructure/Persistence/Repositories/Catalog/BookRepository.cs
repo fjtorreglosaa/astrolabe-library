@@ -114,4 +114,21 @@ public sealed class BookRepository(AstrolabeDbContext context)
     private static IOrderedQueryable<Book> Apply<TKey>(
         IQueryable<Book> query, Expression<Func<Book, TKey>> key, bool ascending) =>
         ascending ? query.OrderBy(key) : query.OrderByDescending(key);
+
+    // ---------- Cover images ----------
+    //
+    // Reached through the book repository rather than one of their own: a cover has no life without
+    // its book, and a second repository would be a second place to forget the book it belongs to.
+
+    public async Task<BookCoverImage?> GetCoverAsync(
+        Guid bookId, CancellationToken cancellationToken = default) =>
+        await Context.Set<BookCoverImage>()
+            .FirstOrDefaultAsync(cover => cover.BookId == bookId, cancellationToken);
+
+    public async Task AddCoverAsync(
+        BookCoverImage cover, CancellationToken cancellationToken = default) =>
+        await Context.Set<BookCoverImage>().AddAsync(cover, cancellationToken);
+
+    public void RemoveCover(BookCoverImage cover) =>
+        Context.Set<BookCoverImage>().Remove(cover);
 }

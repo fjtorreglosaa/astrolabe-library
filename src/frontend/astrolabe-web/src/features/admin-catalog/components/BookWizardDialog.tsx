@@ -21,7 +21,8 @@ import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
 import { money } from '../../membership/planCopy';
 import { getAdministeredLibraries } from '../../network/api/networkApi';
 import type { PlanTier } from '../../membership/api/membershipApi';
-import { createBookDraft, publishBook, type Genre } from '../api/adminCatalogApi';
+import { createBookDraft, publishBook, setBookCover, type Genre } from '../api/adminCatalogApi';
+import { CoverPicker } from './CoverPicker';
 import {
   DISCARD_BODY,
   DISCARD_TITLE,
@@ -81,6 +82,7 @@ export const BookWizardDialog = ({ open, onClose, onSaved }: BookWizardDialogPro
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [dirty, setDirty] = useState(false);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const [cover, setCover] = useState<File | null>(null);
 
   const scope = useQuery({
     queryKey: ['network', 'administered-libraries'],
@@ -111,6 +113,7 @@ export const BookWizardDialog = ({ open, onClose, onSaved }: BookWizardDialogPro
     setDraft(EMPTY);
     setDirty(false);
     setConfirmingDiscard(false);
+    setCover(null);
   };
 
   const close = () => {
@@ -131,6 +134,13 @@ export const BookWizardDialog = ({ open, onClose, onSaved }: BookWizardDialogPro
         coverUrl: null,
         copies: [{ libraryId, quantity: copies }],
       });
+
+      // After the book exists, because a cover belongs to one. Publishing comes last so nothing
+      // reaches a member between the two — a book briefly live without its picture would be a
+      // worse first impression than one that appeared a second later.
+      if (cover) {
+        await setBookCover(id, cover);
+      }
 
       if (publish) {
         await publishBook(id);
@@ -212,6 +222,20 @@ export const BookWizardDialog = ({ open, onClose, onSaved }: BookWizardDialogPro
                   </MenuItem>
                 ))}
               </TextField>
+
+              <Divider />
+
+              <CoverPicker
+                file={cover}
+                onChange={(next) => {
+                  setCover(next);
+                  setDirty(true);
+                }}
+                // The book has no identifier yet, so the tint previews from the ISBN — which is the
+                // one thing on this step that is already unique to it.
+                previewKey={draft.isbn || draft.title}
+                title={draft.title}
+              />
             </Stack>
           ) : null}
 
@@ -283,6 +307,7 @@ export const BookWizardDialog = ({ open, onClose, onSaved }: BookWizardDialogPro
                 }
               />
               <Row label="Plan tier" value={draft.tier} />
+              <Row label="Cover" value={cover ? cover.name : 'Generated colour'} />
 
               <Alert severity="info" sx={{ mt: 2 }} icon={<MaterialSymbol name="visibility" size={20} />}>
                 {PUBLISH_NOTE}

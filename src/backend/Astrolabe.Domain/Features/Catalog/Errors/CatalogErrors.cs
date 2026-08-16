@@ -4,6 +4,31 @@ namespace Astrolabe.Domain.Features.Catalog.Errors;
 
 public static class CatalogErrors
 {
+    // ---------- Cover images, BR-CAT-005 ----------
+
+    public static readonly Error CoverImageEmpty =
+        Error.Validation("catalog.cover_empty", "Choose an image to upload.");
+
+    /// <summary>The prototype's own message, and its own limit.</summary>
+    public static readonly Error CoverImageTooLarge =
+        Error.Validation("catalog.cover_too_large",
+            "That image is larger than 4 MB. Pick a smaller file.");
+
+    public static readonly Error CoverImageTypeNotAllowed =
+        Error.Validation("catalog.cover_type_not_allowed",
+            "That file is not an image. Use JPG, PNG or WebP.");
+
+    /// <summary>
+    /// The declared type and the bytes disagree. Distinct from the message above because it is a
+    /// different problem: the file claims to be an image and is not one.
+    /// </summary>
+    public static readonly Error CoverImageNotAnImage =
+        Error.Validation("catalog.cover_not_an_image",
+            "That file does not look like the image type it claims to be.");
+
+    public static readonly Error CoverImageNotFound =
+        Error.NotFound("catalog.cover_not_found", "That book has no cover image.");
+
     public static readonly Error BookNotFound =
         Error.NotFound("Catalog.BookNotFound", "That book does not exist.");
 

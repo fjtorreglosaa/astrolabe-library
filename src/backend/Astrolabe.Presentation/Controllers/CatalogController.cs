@@ -11,6 +11,7 @@ using Astrolabe.Presentation.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Astrolabe.Application.Features.Catalog.Queries.GetBookCover;
 
 namespace Astrolabe.Presentation.Controllers;
 
@@ -51,6 +52,46 @@ public sealed class CatalogController(ISender sender) : ApiControllerBase(sender
 
         return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
     }
+
+    /// <summary>
+    /// Serves a book's cover.
+    ///
+    /// <para>
+    /// Its own resource rather than bytes inside a listing, which is the whole reason the image is
+    /// not stored on the book: a page of twenty books carries twenty short paths, and the browser
+    /// caches each picture once instead of receiving it again with every search.
+    /// </para>
+    /// <para>
+    /// Cached for a day and keyed by the book, which is safe because replacing a cover changes
+    /// nothing about the URL — so the response also carries an entity tag from the upload time,
+    /// and a replaced image invalidates on its own.
+    /// </para>
+    /// </summary>
+    [HttpGet("books/{bookId:guid}/cover")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCover(Guid bookId, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetBookCoverQuery(bookId), cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        var cover = result.Value;
+
+        Response.Headers.CacheControl = "private, max-age=86400";
+
+        return File(cover.Content, cover.ContentType, cover.UploadedAt, EntityTagOf(cover));
+    }
+
+    /// <summary>
+    /// Derived from the upload time, so replacing a cover replaces the tag and every cached copy
+    /// expires at once — without the URL ever having to change.
+    /// </summary>
+    private static Microsoft.Net.Http.Headers.EntityTagHeaderValue EntityTagOf(
+        Application.Contracts.Catalog.BookCoverDto cover) =>
+        new($"\"{cover.UploadedAt.UtcTicks:x}\"");
 
     [HttpGet("books/{bookId:guid}/reviews")]
     [ProducesResponseType<PagedResult<ReviewDto>>(StatusCodes.Status200OK)]

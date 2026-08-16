@@ -56,6 +56,12 @@ public sealed class AstrolabeDbContext(
 
     public DbSet<BookCopy> BookCopies => Set<BookCopy>();
 
+    /// <summary>
+    /// Cover bytes, deliberately their own table. Never selected by a listing — a page of twenty
+    /// books would otherwise carry twenty images inline.
+    /// </summary>
+    public DbSet<BookCoverImage> BookCovers => Set<BookCoverImage>();
+
     public DbSet<Review> Reviews => Set<Review>();
 
     public DbSet<Reservation> Reservations => Set<Reservation>();

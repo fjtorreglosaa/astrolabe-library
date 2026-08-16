@@ -336,6 +336,11 @@ aggregate root, not before.
 
 Open decisions awaiting the user:
 
+- `GLOBAL-026` — **the interface is not at parity with the mockup.** 156 of the prototype's 320
+  strings are absent; two screens are placeholders, the shell lacks the quick-actions button, the
+  sidebar AI card and the collapsible rail, and eight features are missing inside built screens.
+  Full inventory in `global_task_spec.md`.
+
 - `GLOBAL-024` / `GLOBAL-025` — the Stage 8 coverage gap, measured but not closed. Domain 63%,
   Application 35%, Infrastructure 31%, Presentation 4%, against targets of 90/80/70/70. 96 of 217
   business rules are cited in no test.

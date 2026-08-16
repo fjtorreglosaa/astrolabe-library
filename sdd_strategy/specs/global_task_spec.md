@@ -43,6 +43,7 @@ belonging to a single domain live in that domain's `tasks.md`.
 | `GLOBAL-012` | Full Freshness Protocol sweep before MVP acceptance | ✅ | — | — | **Done 2026-08-16.** 33 of 34 spec files fresh; `PLAN-001` itself carries no `Last reviewed` header, which is correct for a plan |
 | `GLOBAL-024` | **Close the test coverage gap to the SDD+ §9.1 targets** | ⬜ | — | — | Raised 2026-08-16, measured during Stage 8. Domain 63.4% against 90%, Application 34.5% against 80%, Infrastructure 31.4% against 70%, Presentation 4.4% against 70%. The Infrastructure figure reads 3.7% raw — 40,282 of its 45,620 lines are generated migrations, and excluding them is the honest measurement. **This is the bulk of Stage 8 and is not done** |
 | `GLOBAL-025` | **Give every `BR-*` rule a test that cites it** | ⬜ | `GLOBAL-024` | — | Raised 2026-08-16. 96 of 217 rules are named in no test. SDD+ §9.1 requires one each, and citation is the only way to demonstrate it — several of the 96 are covered by behaviour without naming the rule, which is exactly the ambiguity the requirement exists to remove |
+| `GLOBAL-026` | **Close the mockup parity gap in the interface** | ⬜ | — | — | Raised 2026-08-16 after a user report. An exhaustive diff of the prototype's text outline against the app finds **156 of its 320 distinct strings absent**. Two whole screens are still placeholders, the shell is missing three elements, and eleven features exist in the mockup with no counterpart. The full inventory is below |
 | `GLOBAL-018` | **Evaluate domain split: `catalog`** | ✅ | — | `catalog` kept whole | **Resolved 2026-08-16: kept undivided, as a documented exception to SDD+ §6.2.** The threshold is a smell detector and here it reports a false positive — see the reasoning below. Revisit if the rule count passes 35 or a second aggregate root appears |
 | `GLOBAL-020` | Promote audit to its own bounded context | ✅ | — | `Domain/Features/Audit/`, `IAuditUnitOfWork` | Done 2026-08-16. `AuditEntry` and `IAuditRepository` moved out of `identity`. Five `network` handlers no longer reach into `IIdentityUnitOfWork` for one row; `catalog` can write BR-CAT-025 entries without knowing identity exists. Rule 24 |
 | `GLOBAL-022` | **Make the create endpoints answer one shape** | ✅ | — | `CreatedResourceResponse` | **Resolved 2026-08-16.** All three now answer `{ id }` through one named record. A record rather than an anonymous object so it reaches the generated schema, and an object rather than a bare identifier so a field can be added later without breaking every caller. The frontend gained a matching `CreatedResource` type so the next screen cannot get it wrong either. Creates that return a whole resource — `PlaceOrder` answers an order — are deliberately untouched: that is a different thing, not an inconsistency |
@@ -291,3 +292,73 @@ Access tokens issued before this change carry `"Plus"` or `"Max"` in the role cl
 policy, so live sessions break on the first authorised request. Refresh reissues a correct token, but
 any session holding only an access token is signed out. Acceptable in development; on a deployed
 environment this needs either a short token lifetime window or a deliberate mass sign-out.
+
+---
+
+## `GLOBAL-026` — mockup parity audit, 2026-08-16
+
+Raised after a user reported the missing cover upload. The audit that followed was mechanical: every
+distinct string in `docs/design/prototype.text-outline.txt` was matched against the frontend source.
+**156 of 320 are absent.** Some of those are wording differences in copy I wrote myself, but the
+structural findings below were each confirmed by hand.
+
+The prototype is authority #1 on product behaviour, so every item here is a gap in the app rather
+than a difference of opinion.
+
+### A. The shell — confirmed missing
+
+| # | Element | What the prototype does |
+|---|---|---|
+| A1 | ✅ **Quick actions button** | A `bolt` floating button opening a speed dial. Staff get Users, Book management, AI settings; members get Quick check-in, Search catalogue, Delivery status, Pay fines. It also **docks**: `hideFab` puts it away and `showFab` brings it back, which is a second behaviour and not merely an open/close |
+| A2 | ✅ **AI card in the sidebar** | A panel at the foot of the navigation showing the AI status line and a call to action, with a `lock` icon and "Compare plans →" for Basic. It is how a Basic member discovers the feature exists |
+| A3 | ✅ **Collapsible sidebar** | `navOpen` toggles the rail between 264px and 78px, hiding labels and centring icons. The header's `menu_open` / `menu` icon drives it |
+
+### B. Whole screens still on a placeholder
+
+| # | Route | What the prototype has |
+|---|---|---|
+| B1 | `/settings` | Appearance and theme, delivery defaults, preferred topics, reading history, payment methods, notification settings, staff AI access, delete account |
+| B2 | `/profile` | The profile rows — plan, renewal, reward points, account status, fines owed, books reserved, purchases, on-time returns — plus topics and reading history |
+| B3 | `/forgot-password` | The reset request and the reset form. **The backend commands and endpoints already exist**, so this is surface only |
+
+### C. Features missing inside screens that were built
+
+| # | Feature | Where |
+|---|---|---|
+| C1 | ✅ **Cover image upload** | Done 2026-08-16. Drag-and-drop or browse, JPG/PNG/WebP up to 4 MB, preview at the 3:4 the cards crop to, remove. Bytes live in their own table and are served by an endpoint, so a listing carries a short path rather than the image. The tint is presented as *what will happen*, not as a colour to choose — `BR-CAT-005` derives it from identity |
+| C2 | **Payment methods** | Add a card, make it default, remove it, and the tokenisation notice |
+| C3 | **Recording a desk payment** | Staff take cash or card at the counter for a member who has no code |
+| C4 | **Book reviews** | Writing, editing and removing a review, and the rating it feeds |
+| C5 | **Rows per page** | Every table in the prototype has one; ours are fixed at twenty |
+| C6 | **Unsaved-change guards** | "Leave without saving?", "Leave without inviting?", "Save as draft?" — the wizard has one, the other forms do not |
+| C7 | **Reading history and preferred topics** | Shown on the profile and fed to `recommendations` as the member's stated interests |
+| C8 | **"See all recommendations"** | The home screen shows three picks and links to the full set |
+
+### D. Reported but not reproduced
+
+| # | Report | Finding |
+|---|---|---|
+| D1 | The login background is white rather than the mockup's green | **The token already matches.** `tokens.ts` sets the light background to `#F4F9FB`, which is exactly the prototype's `t.bg`, and `CssBaseline` is applied. If it reads as white the cause is elsewhere — most likely the card's white surface dominating a sparse layout. **Needs a visual comparison**, which is blocked on the browser extension |
+
+### Sequencing note
+
+B3 is the cheapest — the backend is done. A1 and A2 are small and highly visible. C2 and C3 are the
+largest, because both need their own screens and both touch money.
+
+None of this is covered by `GLOBAL-024` or `GLOBAL-025`, which are about test coverage. This is
+missing product.
+
+### Progress, 2026-08-16
+
+`A1`, `A2`, `A3` and `C1` are done. Two things surfaced while doing them and are worth recording.
+
+**The collapsed sidebar was wrong, not missing.** It narrowed to zero rather than to the prototype's
+78px rail, so every jump became a two-step act — open the sidebar, then click. It now narrows,
+centres its icons, drops its section headings and shows the labels as tooltips.
+
+**The cover endpoint's cache header was being overwritten.** `NoStoreForAuthenticatedResponsesMiddleware`
+marks every authenticated response `no-store`, which is right for a member's profile and wrong for a
+book cover: every reader gets identical bytes, and blanket revalidation undoes the entire reason the
+image was moved out of the listing. The middleware now keeps a directive a handler set for itself,
+and still applies `Vary: Authorization` either way. Found by reading the response headers, not by any
+test — three now cover it.
