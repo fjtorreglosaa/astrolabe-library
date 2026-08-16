@@ -24,6 +24,7 @@ import { GENRE_LABEL, bookBadgeLabel, copyReasonLabel } from '../catalogCopy';
 import { ReserveDialog } from '../../reservations/components/ReserveDialog';
 import { BuyBookDialog } from '../../store/components/BuyBookDialog';
 import { BookCover } from './BookCover';
+import { BookReviews } from './BookReviews';
 
 /**
  * The book detail panel: metadata, every branch that holds it, and the reviews.
@@ -279,7 +280,10 @@ export const BookDetailDialog = ({ bookId, membership, onClose }: BookDetailDial
                   </Stack>
                 ) : null}
               </Stack>
-            </Stack>
+            
+          {/* The conversation about the book, under the book. */}
+          {bookId ? <BookReviews bookId={bookId} /> : null}
+</Stack>
           </DialogContent>
         </>
       )}

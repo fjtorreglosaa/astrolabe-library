@@ -1,47 +1,39 @@
-import { Backdrop, Box, IconButton, SpeedDial, SpeedDialAction, Tooltip } from '@mui/material';
+import {
+  Box,
+  ClickAwayListener,
+  Divider,
+  Fab,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MaterialSymbol } from '../shared/components/MaterialSymbol';
 import { useUiStore } from '../app/uiStore';
 import { useAuth } from '../features/auth/components/AuthProvider';
-
-interface QuickAction {
-  icon: string;
-  label: string;
-  route: string;
-}
-
-/**
- * The four a member reaches for. Transcribed from the prototype's `quick` list.
- *
- * Every one is a shortcut to a screen they can already reach — the value is that it is the same
- * gesture from anywhere, not that it unlocks anything.
- */
-const MEMBER_ACTIONS: QuickAction[] = [
-  { icon: 'qr_code_scanner', label: 'Quick check-in', route: '/loans' },
-  { icon: 'search', label: 'Search catalogue', route: '/catalog' },
-  { icon: 'local_shipping', label: 'Delivery status', route: '/loans' },
-  { icon: 'payments', label: 'Pay fines', route: '/fines' },
-];
-
-const STAFF_ACTIONS: QuickAction[] = [
-  { icon: 'group', label: 'Users', route: '/admin/users' },
-  { icon: 'library_add', label: 'Book management', route: '/admin/books' },
-  { icon: 'auto_awesome', label: 'AI settings', route: '/admin/ai' },
-];
+import { MEMBER_ACTIONS, STAFF_ACTIONS } from './quickActionItems';
 
 /**
  * Quick actions.
  *
  * <p>
- * Two behaviours, not one, and the prototype is explicit about both: the dial opens and closes, and
- * the button itself <b>docks</b> — put away with a dismiss and brought back from a small handle. A
- * floating button that cannot be moved out of the way is one that eventually covers the thing
- * somebody is trying to read, and on a phone that is most of the screen.
+ * A labelled panel, not a speed dial. The prototype opens a card above the button carrying a `bolt`
+ * icon, the heading <b>Quick actions</b>, the line <b>Jump straight to what you need.</b> and the
+ * actions as full rows with their labels always visible. That matters: a dial shows its labels only
+ * on hover, which on a touch screen means it shows them never.
  * </p>
  * <p>
- * The docked state is persisted. Somebody who dismissed it meant it, and returning it on every
- * navigation would be arguing with them.
+ * Two separate behaviours, both from the prototype. The button <b>opens</b> the panel — its icon
+ * turns from `bolt` to `close`. And a `keyboard_tab` control in the panel header <b>docks</b> the
+ * whole thing away to the screen edge, from where the same icon brings it back. A floating button
+ * that cannot be dismissed eventually covers whatever somebody is trying to read.
  * </p>
  */
 export const QuickActions = () => {
@@ -54,70 +46,116 @@ export const QuickActions = () => {
   const isStaff = role === 'Admin' || role === 'SuperAdmin';
   const actions = isStaff ? STAFF_ACTIONS : MEMBER_ACTIONS;
 
+  // Docked: only the handle remains, flush to the edge. The same `keyboard_tab` icon that put it
+  // away brings it back, so the gesture reads as one thing in two directions.
   if (docked) {
     return (
       <Tooltip title="Show quick actions" placement="left">
         <IconButton
           aria-label="Show quick actions"
-          onClick={() => setDocked(false)}
+          onClick={() => {
+            setDocked(false);
+            setOpen(true);
+          }}
           sx={{
             position: 'fixed',
             right: 0,
-            bottom: 96,
+            bottom: 88,
             zIndex: (theme) => theme.zIndex.speedDial,
-            // A handle rather than a button: flush to the edge and half-hidden, so it is findable
-            // without competing with the page.
-            borderRadius: '8px 0 0 8px',
+            borderRadius: '10px 0 0 10px',
             bgcolor: 'background.paper',
             border: 1,
             borderRight: 0,
             borderColor: 'divider',
-            boxShadow: 2,
+            boxShadow: 3,
+            '&:hover': { bgcolor: 'background.paper' },
           }}
         >
-          <MaterialSymbol name="bolt" size={20} />
+          <MaterialSymbol name="keyboard_tab" size={20} sx={{ transform: 'rotate(180deg)' }} />
         </IconButton>
       </Tooltip>
     );
   }
 
   return (
-    <>
-      {/* Dims the page while the dial is open, so the four choices are the only thing to read. */}
-      <Backdrop open={open} sx={{ zIndex: (theme) => theme.zIndex.speedDial - 1 }} />
+    <ClickAwayListener onClickAway={() => setOpen(false)}>
+      <Box
+        sx={{
+          position: 'fixed',
+          right: 24,
+          bottom: 24,
+          zIndex: (theme) => theme.zIndex.speedDial,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 1.5,
+        }}
+      >
+        {open ? (
+          <Paper
+            elevation={8}
+            sx={{ width: 268, overflow: 'hidden', borderRadius: 2 }}
+            role="menu"
+            aria-label="Quick actions"
+          >
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ p: 2, pb: 1.5, alignItems: 'flex-start' }}
+            >
+              <MaterialSymbol name="bolt" size={22} sx={{ color: 'primary.main', mt: 0.25 }} />
+              <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2">Quick actions</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Jump straight to what you need.
+                </Typography>
+              </Stack>
+              <Tooltip title="Hide this button">
+                <IconButton
+                  size="small"
+                  aria-label="Hide quick actions"
+                  onClick={() => {
+                    setOpen(false);
+                    setDocked(true);
+                  }}
+                >
+                  <MaterialSymbol name="keyboard_tab" size={18} />
+                </IconButton>
+              </Tooltip>
+            </Stack>
 
-      <Box sx={{ position: 'fixed', right: 24, bottom: 24, zIndex: (theme) => theme.zIndex.speedDial }}>
-        <SpeedDial
-          ariaLabel="Quick actions"
-          open={open}
-          onOpen={() => setOpen(true)}
-          onClose={() => setOpen(false)}
-          icon={<MaterialSymbol name={open ? 'close' : 'bolt'} size={24} />}
+            <Divider />
+
+            <List disablePadding>
+              {actions.map((action) => (
+                <ListItemButton
+                  key={action.label}
+                  onClick={() => {
+                    setOpen(false);
+                    navigate(action.route);
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    <MaterialSymbol name={action.icon} size={20} />
+                  </ListItemIcon>
+                  {/* The label is always on screen. On a touch device a hover tooltip is a label
+                      that never appears. */}
+                  <ListItemText primary={action.label} slotProps={{ primary: { variant: 'body2' } }} />
+                </ListItemButton>
+              ))}
+            </List>
+          </Paper>
+        ) : null}
+
+        <Fab
+          color="primary"
+          aria-label={open ? 'Close quick actions' : 'Quick actions'}
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
         >
-          {actions.map((action) => (
-            <SpeedDialAction
-              key={action.label}
-              icon={<MaterialSymbol name={action.icon} size={20} />}
-              slotProps={{ tooltip: { title: action.label, open: true } }}
-              onClick={() => {
-                setOpen(false);
-                navigate(action.route);
-              }}
-            />
-          ))}
-
-          {/* Dismissing is one of the actions rather than a separate control, so the gesture that
-              opened the dial is the gesture that puts it away. */}
-          <SpeedDialAction
-            icon={<MaterialSymbol name="close_fullscreen" size={20} />}
-            slotProps={{ tooltip: { title: 'Hide this button', open: true } }}
-            onClick={() => {
-              setOpen(false);
-              setDocked(true);
-            }}
-          />
-        </SpeedDial>
+          <MaterialSymbol name={open ? 'close' : 'bolt'} size={24} />
+        </Fab>
       </Box>
-    </>
+    </ClickAwayListener>
   );
 };

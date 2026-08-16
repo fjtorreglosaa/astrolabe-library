@@ -317,18 +317,18 @@ than a difference of opinion.
 
 | # | Route | What the prototype has |
 |---|---|---|
-| B1 | `/settings` | Appearance and theme, delivery defaults, preferred topics, reading history, payment methods, notification settings, staff AI access, delete account |
+| B1 | ✅ `/settings` | Appearance and theme, delivery defaults, preferred topics, reading history, payment methods, notification settings, staff AI access, delete account |
 | B2 | `/profile` | The profile rows — plan, renewal, reward points, account status, fines owed, books reserved, purchases, on-time returns — plus topics and reading history |
-| B3 | `/forgot-password` | The reset request and the reset form. **The backend commands and endpoints already exist**, so this is surface only |
+| B3 | ✅ `/forgot-password` | The reset request and the reset form. **The backend commands and endpoints already exist**, so this is surface only |
 
 ### C. Features missing inside screens that were built
 
 | # | Feature | Where |
 |---|---|---|
 | C1 | ✅ **Cover image upload** | Done 2026-08-16. Drag-and-drop or browse, JPG/PNG/WebP up to 4 MB, preview at the 3:4 the cards crop to, remove. Bytes live in their own table and are served by an endpoint, so a listing carries a short path rather than the image. The tint is presented as *what will happen*, not as a colour to choose — `BR-CAT-005` derives it from identity |
-| C2 | **Payment methods** | Add a card, make it default, remove it, and the tokenisation notice |
+| C2 | ✅ **Payment methods** | Add a card, make it default, remove it, and the tokenisation notice |
 | C3 | **Recording a desk payment** | Staff take cash or card at the counter for a member who has no code |
-| C4 | **Book reviews** | Writing, editing and removing a review, and the rating it feeds |
+| C4 | ✅ **Book reviews** | Writing, editing and removing a review, and the rating it feeds |
 | C5 | **Rows per page** | Every table in the prototype has one; ours are fixed at twenty |
 | C6 | **Unsaved-change guards** | "Leave without saving?", "Leave without inviting?", "Save as draft?" — the wizard has one, the other forms do not |
 | C7 | **Reading history and preferred topics** | Shown on the profile and fed to `recommendations` as the member's stated interests |
@@ -362,3 +362,19 @@ book cover: every reader gets identical bytes, and blanket revalidation undoes t
 image was moved out of the listing. The middleware now keeps a directive a handler set for itself,
 and still applies `Vary: Authorization` either way. Found by reading the response headers, not by any
 test — three now cover it.
+
+### Correction, 2026-08-16 — quick actions
+
+The first attempt used a MUI `SpeedDial`. It reproduced the behaviour and not the thing: the
+prototype opens a **labelled panel** above the button, carrying a `bolt` icon, the heading *Quick
+actions*, the line *Jump straight to what you need.* and the actions as full rows.
+
+The difference is not decoration. A speed dial reveals its labels on hover, which on a touch device
+means it never reveals them — four unexplained icons in an arc. The panel shows them permanently.
+
+The docking control is also specific: a `keyboard_tab` button inside the panel header puts the whole
+thing away to the screen edge, and the same icon brings it back. That is a second behaviour beside
+opening and closing, and the prototype names both.
+
+Recorded because the mistake is worth remembering: reading a view model tells you what a screen
+*does*, and only the markup tells you what it *is*.

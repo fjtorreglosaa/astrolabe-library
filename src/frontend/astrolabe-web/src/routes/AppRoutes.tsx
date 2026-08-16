@@ -24,6 +24,9 @@ import { AiRecommendationsPage } from '../features/recommendations/pages/AiRecom
 import { AdminAiSettingsPage } from '../features/recommendations/pages/AdminAiSettingsPage';
 import { NotificationSettingsPage } from '../features/notifications/pages/NotificationSettingsPage';
 import { SupportPage } from '../features/support/pages/SupportPage';
+import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '../features/auth/pages/ResetPasswordPage';
+import { SettingsPage } from '../features/settings/pages/SettingsPage';
 
 /**
  * The route table.
@@ -37,7 +40,8 @@ export const AppRoutes = () => (
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/verify" element={<VerifyEmailPage />} />
-      <Route path="/forgot-password" element={<PlaceholderScreen title="Reset your password" stage="Stage 1 — pending" />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
     </Route>
 
@@ -50,7 +54,7 @@ export const AppRoutes = () => (
         <Route path="/purchases" element={<PurchasesPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/profile" element={<PlaceholderScreen title="My profile" stage="Stage 2" />} />
-        <Route path="/settings" element={<PlaceholderScreen title="Settings" stage="Stage 2" />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/devices" element={<DevicesAndSessionsPage />} />
         <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
         <Route path="/settings/membership" element={<MembershipPage />} />

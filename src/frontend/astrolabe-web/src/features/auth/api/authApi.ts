@@ -88,3 +88,13 @@ export const resendVerification = async (email: string): Promise<void> => {
 export const forgotPassword = async (email: string): Promise<void> => {
   await httpClient.post('/api/v1/auth/forgot-password', { email });
 };
+
+/**
+ * Sets a new password from an emailed token.
+ *
+ * The password is sent exactly as typed — never trimmed. A password may legitimately contain spaces,
+ * and quietly removing them would lock somebody out of the account they had just recovered.
+ */
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  await httpClient.post('/api/v1/auth/reset-password', { token, newPassword });
+};
