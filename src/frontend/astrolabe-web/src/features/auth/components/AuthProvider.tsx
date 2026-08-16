@@ -37,19 +37,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     staleTime: 60_000,
   });
 
+  /**
+   * Discards every cached response and refetches whatever is on screen.
+   *
+   * Called on both sides of an identity change, because everything in the cache was fetched *as*
+   * somebody — a catalogue verdict, a membership, a session list — and none of it survives them.
+   *
+   * `resetQueries` rather than `clear`: `clear` empties the cache but leaves mounted observers
+   * holding their last result, so the interface keeps rendering the previous user until the page is
+   * reloaded by hand. It also removes the entries that a later `invalidateQueries` would need to
+   * match, so the refetch that was supposed to load the new user never fired at all.
+   */
+  const resetServerState = useCallback(() => queryClient.resetQueries(), [queryClient]);
+
   const signIn = useCallback(
     async (email: string, password: string) => {
       await signInRequest(email, password, getDeviceId());
-      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      await resetServerState();
     },
-    [queryClient],
+    [resetServerState],
   );
 
   const signOut = useCallback(async () => {
     await signOutRequest();
-    // Everything cached was fetched as this user, so none of it may survive them.
-    queryClient.clear();
-  }, [queryClient]);
+    await resetServerState();
+  }, [resetServerState]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

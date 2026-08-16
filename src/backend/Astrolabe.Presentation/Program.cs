@@ -88,6 +88,10 @@ app.UseAuthentication();
 app.UseMiddleware<SessionValidationMiddleware>();
 
 app.UseAuthorization();
+
+// After authentication, so it can tell an authenticated response from an anonymous one, and before
+// the endpoints, so it covers every one of them without an attribute per route.
+app.UseMiddleware<NoStoreForAuthenticatedResponsesMiddleware>();
 app.MapControllers();
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
