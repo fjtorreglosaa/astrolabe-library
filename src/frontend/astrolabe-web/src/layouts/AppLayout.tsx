@@ -22,6 +22,7 @@ import { sectionsFor } from '../routes/navigation';
 import { useAuth } from '../features/auth/components/AuthProvider';
 import { UserMenu } from './UserMenu';
 import { AppFooter } from './AppFooter';
+import { NotificationBell } from '../features/notifications/components/NotificationBell';
 
 const DRAWER_WIDTH = 264;
 
@@ -106,7 +107,8 @@ export const AppLayout = () => {
             </IconButton>
           </Tooltip>
 
-          <UserMenu />
+          <NotificationBell />
+            <UserMenu />
         </Toolbar>
       </AppBar>
 

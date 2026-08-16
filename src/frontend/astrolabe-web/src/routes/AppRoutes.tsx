@@ -22,6 +22,7 @@ import { AdminLibrariesPage } from '../features/network/pages/AdminLibrariesPage
 import { AcceptInvitationPage } from '../features/network/pages/AcceptInvitationPage';
 import { AiRecommendationsPage } from '../features/recommendations/pages/AiRecommendationsPage';
 import { AdminAiSettingsPage } from '../features/recommendations/pages/AdminAiSettingsPage';
+import { NotificationSettingsPage } from '../features/notifications/pages/NotificationSettingsPage';
 
 /**
  * The route table.
@@ -50,6 +51,7 @@ export const AppRoutes = () => (
         <Route path="/profile" element={<PlaceholderScreen title="My profile" stage="Stage 2" />} />
         <Route path="/settings" element={<PlaceholderScreen title="Settings" stage="Stage 2" />} />
         <Route path="/settings/devices" element={<DevicesAndSessionsPage />} />
+        <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
         <Route path="/settings/membership" element={<MembershipPage />} />
 
         <Route element={<PlanGuard allow={PaidPlans} />}>

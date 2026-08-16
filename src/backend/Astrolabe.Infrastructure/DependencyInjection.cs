@@ -38,6 +38,10 @@ using Astrolabe.Domain.Features.Recommendations.Repositories;
 using Astrolabe.Infrastructure.Features.Recommendations;
 using Astrolabe.Infrastructure.Integrations.Ai;
 using Astrolabe.Infrastructure.Persistence.Repositories.Recommendations;
+using Astrolabe.Application.Abstractions.Notifications;
+using Astrolabe.Domain.Features.Notifications.Repositories;
+using Astrolabe.Infrastructure.Features.Notifications;
+using Astrolabe.Infrastructure.Persistence.Repositories.Notifications;
 
 namespace Astrolabe.Infrastructure;
 
@@ -131,6 +135,10 @@ public static class DependencyInjection
         services.AddScoped<ILibraryAiConfigurationRepository, LibraryAiConfigurationRepository>();
         services.AddScoped<IRecommendationSetRepository, RecommendationSetRepository>();
         services.AddScoped<IRecommendationsUnitOfWork, RecommendationsUnitOfWork>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
+        services.AddScoped<INotificationsUnitOfWork, NotificationsUnitOfWork>();
+        services.AddScoped<INotificationRaiser, NotificationRaiser>();
         services.AddScoped<IAuditUnitOfWork, AuditUnitOfWork>();
         services.AddScoped<IReservationUnitOfWork, ReservationUnitOfWork>();
         services.AddScoped<IBillingUnitOfWork, BillingUnitOfWork>();

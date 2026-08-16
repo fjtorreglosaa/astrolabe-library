@@ -331,7 +331,8 @@ aggregate root, not before.
 | 5 | `store` | ✅ Done — 17/17 |
 | 6 | Administration surfaces | ✅ Done — user directory, book management, libraries and admins |
 | 7 | `recommendations` | ✅ Done — 18/18 |
-| 8–9 | — | Not started |
+| 8 | Hardening and acceptance | ⬜ Not started — must run last |
+| 9 | `support`, `notifications` | 🔄 `notifications` done; `support` not started |
 
 Open decisions awaiting the user:
 
