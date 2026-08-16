@@ -1,6 +1,7 @@
 import { httpClient } from '../../../shared/api/httpClient';
 import type { Paged } from '../../catalog/api/catalogApi';
 import type { PlanTier } from '../../membership/api/membershipApi';
+import type { CreatedResource } from '../../../shared/api/created';
 
 /** The lifecycle of a book, as the API names it. Members only ever see `Catalog`. */
 export type BookStatus = 'Draft' | 'Catalog' | 'Repair' | 'Deleted';
@@ -78,17 +79,10 @@ export const searchStaffBooks = async (search: {
   return data;
 };
 
-/**
- * Creates the book as a **draft**. Publishing is a separate, deliberate act.
- *
- * The response body is a bare identifier, not an object — unlike the other two creates in this API,
- * which answer `{ id }` and `{ invitationId }`. Three creates, three shapes; getting this wrong
- * silently produced `undefined` here until it was exercised against the running system, so the
- * inconsistency is recorded as `GLOBAL-022` rather than papered over.
- */
+/** Creates the book as a **draft**. Publishing is a separate, deliberate act. */
 export const createBookDraft = async (input: CreateBookInput): Promise<string> => {
-  const { data } = await httpClient.post<string>('/api/v1/admin/catalog/books', input);
-  return data;
+  const { data } = await httpClient.post<CreatedResource>('/api/v1/admin/catalog/books', input);
+  return data.id;
 };
 
 export const updateBook = async (bookId: string, input: UpdateBookInput): Promise<void> => {

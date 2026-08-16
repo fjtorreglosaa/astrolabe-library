@@ -8,6 +8,27 @@ namespace Astrolabe.Domain.Features.Network.Errors;
 /// </summary>
 public static class NetworkErrors
 {
+    /// <summary>BR-NET-015. Nothing outstanding to replace.</summary>
+    public static readonly Error InvitationNotFound =
+        Error.NotFound("network.invitation_not_found", "That account has no invitation waiting.");
+
+    /// <summary>
+    /// BR-NET-015. Resending to somebody who already accepted would email a live link to an account
+    /// they are signed into, which is a way to lose control of it rather than a convenience.
+    /// </summary>
+    public static readonly Error InvitationNotPending =
+        Error.Conflict("network.invitation_not_pending",
+            "That invitation has already been accepted.");
+
+    /// <summary>BR-NET-008. Only an active administrator can be given extended powers.</summary>
+    public static readonly Error NotAnAdministrator =
+        Error.Conflict("network.not_an_administrator",
+            "Extended powers can only be granted to an active administrator.");
+
+    /// <summary>BR-NET-008. The prototype says it plainly: they already have full powers.</summary>
+    public static readonly Error AlreadyASuperAdmin =
+        Error.Conflict("network.already_a_super_admin", "They already have full powers.");
+
     public static readonly Error SuperAdminRequired =
         Error.Authorization("network.super_admin_required",
             "Only a super administrator may perform this operation.");

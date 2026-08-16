@@ -30,10 +30,14 @@ import {
   deactivateLibrary,
   getAdmins,
   getLibraries,
+  grantSuperAdmin,
+  resendInvitation,
   revokeAdmin,
+  type Admin,
   type Library,
   type LibraryObligations,
 } from '../api/networkApi';
+import { AssignLibrariesDialog } from '../components/AssignLibrariesDialog';
 import { InviteAdminDialog } from '../components/InviteAdminDialog';
 import { WITHDRAW_BODY, WITHDRAW_TITLE, obligationsSummary } from '../networkCopy';
 
@@ -58,6 +62,8 @@ export const AdminLibrariesPage = () => {
   const [inviting, setInviting] = useState(false);
   const [withdrawing, setWithdrawing] = useState<Library | null>(null);
   const [revoking, setRevoking] = useState<{ id: string; name: string } | null>(null);
+  const [assigning, setAssigning] = useState<Admin | null>(null);
+  const [elevating, setElevating] = useState<Admin | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [report, setReport] = useState<LibraryObligations | null>(null);
 
@@ -106,7 +112,21 @@ export const AdminLibrariesPage = () => {
     },
   });
 
-  const failure = create.error ?? withdraw.error ?? revoke.error;
+  const elevate = useMutation({
+    mutationFn: () => grantSuperAdmin(elevating!.id),
+    onSuccess: async () => {
+      setNotice(`“${elevating!.fullName}” now has full powers across the network.`);
+      setElevating(null);
+      await refresh();
+    },
+  });
+
+  const resend = useMutation({
+    mutationFn: (admin: Admin) => resendInvitation(admin.id),
+    onSuccess: (_id, admin) => setNotice(`A fresh invitation was sent to ${admin.email}.`),
+  });
+
+  const failure = create.error ?? withdraw.error ?? revoke.error ?? elevate.error ?? resend.error;
 
   return (
     <Stack spacing={4}>
@@ -264,15 +284,41 @@ export const AdminLibrariesPage = () => {
                     </TableCell>
                     <TableCell>{formatDate(admin.since)}</TableCell>
                     <TableCell align="right">
-                      {admin.role === 'Admin' ? (
-                        <Button
-                          size="small"
-                          color="error"
-                          onClick={() => setRevoking({ id: admin.id, name: admin.fullName })}
-                        >
-                          Revoke
-                        </Button>
-                      ) : null}
+                      {/* The prototype's four actions, and only the ones this row can take. An
+                          invited account has not proved it owns the address yet, so it can be
+                          chased or dropped but not assigned to and not elevated. */}
+                      <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
+                        {admin.status === 'Invited' ? (
+                          <Button
+                            size="small"
+                            loading={resend.isPending && resend.variables?.id === admin.id}
+                            onClick={() => resend.mutate(admin)}
+                          >
+                            Resend
+                          </Button>
+                        ) : null}
+
+                        {admin.role === 'Admin' && admin.status === 'Active' ? (
+                          <>
+                            <Button size="small" onClick={() => setAssigning(admin)}>
+                              Libraries
+                            </Button>
+                            <Button size="small" onClick={() => setElevating(admin)}>
+                              Elevate
+                            </Button>
+                          </>
+                        ) : null}
+
+                        {admin.role === 'Admin' ? (
+                          <Button
+                            size="small"
+                            color="error"
+                            onClick={() => setRevoking({ id: admin.id, name: admin.fullName })}
+                          >
+                            Revoke
+                          </Button>
+                        ) : null}
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -361,6 +407,27 @@ export const AdminLibrariesPage = () => {
         busy={withdraw.isPending}
         onConfirm={() => withdraw.mutate()}
         onCancel={() => setWithdrawing(null)}
+      />
+
+      <AssignLibrariesDialog
+        admin={assigning}
+        libraries={libraries.data ?? []}
+        onClose={() => setAssigning(null)}
+        onAssigned={async (message) => {
+          setNotice(message);
+          await refresh();
+        }}
+      />
+
+      <ConfirmDialog
+        open={elevating !== null}
+        title="Grant extended powers?"
+        description={`“${elevating?.fullName}” becomes a super administrator: every library, and the ability to appoint and revoke administrators. There is no way to undo this from here — the network must never be left without a super administrator, so nobody can demote one.`}
+        confirmLabel="Grant"
+        destructive
+        busy={elevate.isPending}
+        onConfirm={() => elevate.mutate()}
+        onCancel={() => setElevating(null)}
       />
 
       <ConfirmDialog

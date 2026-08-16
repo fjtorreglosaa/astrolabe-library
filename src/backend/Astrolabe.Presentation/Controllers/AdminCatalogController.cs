@@ -14,6 +14,7 @@ using Astrolabe.Presentation.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Astrolabe.Presentation.Contracts.Common;
 
 namespace Astrolabe.Presentation.Controllers;
 
@@ -48,7 +49,7 @@ public sealed class AdminCatalogController(ISender sender) : ApiControllerBase(s
     }
 
     [HttpPost("books")]
-    [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
+    [ProducesResponseType<CreatedResourceResponse>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateBook(
         [FromBody] CreateBookRequest request, CancellationToken cancellationToken)
     {
@@ -59,7 +60,8 @@ public sealed class AdminCatalogController(ISender sender) : ApiControllerBase(s
             cancellationToken);
 
         return result.IsSuccess
-            ? CreatedAtAction(nameof(CreateBook), new { bookId = result.Value }, result.Value)
+            ? CreatedAtAction(nameof(CreateBook), new { bookId = result.Value },
+                new CreatedResourceResponse(result.Value))
             : HandleFailure(result);
     }
 

@@ -49,6 +49,25 @@ describe('httpClient refresh interceptor', () => {
     expect(getAccessToken()).toBeNull();
   });
 
+  it('does not refresh when accepting an invitation is rejected', async () => {
+    // The entry for this route read '/auth/accept-invitation' until Stage 6 built the screen, and
+    // no such route exists — so the exclusion matched nothing. It costs nothing today, because the
+    // endpoint answers 409 and 400 rather than 401, and it would cost everything on the day that
+    // changed: an invitee whose browser still holds a previous session's cookie would be refreshed
+    // into somebody else's account while the form showed an error.
+    mock.onPost('/api/v1/network/admins/accept-invitation').reply(401, { status: 401 });
+    mock.onPost('/api/v1/auth/refresh').reply(200, { accessToken: 'someone-elses-token' });
+
+    await expect(
+      httpClient.post('/api/v1/network/admins/accept-invitation', {
+        token: 'stale',
+        password: 'a-long-enough-password',
+      }),
+    ).rejects.toMatchObject({ response: { status: 401 } });
+
+    expect(mock.history.filter((call) => call.url?.includes('/auth/refresh'))).toHaveLength(0);
+  });
+
   it('refreshes and retries once when an authenticated call expires', async () => {
     setAccessToken('expired');
 

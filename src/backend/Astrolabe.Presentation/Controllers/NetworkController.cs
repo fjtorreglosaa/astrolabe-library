@@ -16,6 +16,10 @@ using Astrolabe.Presentation.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Astrolabe.Presentation.Contracts.Common;
+using Astrolabe.Presentation.Contracts.Network;
+using Astrolabe.Application.Features.Network.Commands.ResendInvitation;
+using Astrolabe.Application.Features.Network.Commands.GrantSuperAdmin;
 
 namespace Astrolabe.Presentation.Controllers;
 
@@ -91,7 +95,9 @@ public sealed class NetworkController(ISender sender) : ApiControllerBase(sender
                 request.Email, request.FullName, request.Role, request.LibraryIds, request.Message),
             cancellationToken);
 
-        return result.IsSuccess ? Ok(new InvitationResponse(result.Value)) : HandleFailure(result);
+        return result.IsSuccess
+            ? Ok(new CreatedResourceResponse(result.Value))
+            : HandleFailure(result);
     }
 
     /// <summary>Anonymous: the invitee has no account until they accept.</summary>
@@ -117,6 +123,37 @@ public sealed class NetworkController(ISender sender) : ApiControllerBase(sender
         return result.IsSuccess ? NoContent() : HandleFailure(result);
     }
 
+    /// <summary>
+    /// BR-NET-015. Issues a fresh invitation and kills every one still outstanding for that account.
+    /// </summary>
+    [HttpPost("admins/{userId:guid}/resend-invitation")]
+    [Authorize(Policy = Policies.SuperAdminOnly)]
+    [ProducesResponseType<CreatedResourceResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ResendInvitation(
+        Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new ResendInvitationCommand(userId), cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(new CreatedResourceResponse(result.Value))
+            : HandleFailure(result);
+    }
+
+    /// <summary>
+    /// The "grant extended powers" half of BR-NET-008: raises an administrator to super
+    /// administrator. There is no route back — see the command for why.
+    /// </summary>
+    [HttpPost("admins/{userId:guid}/grant-super-admin")]
+    [Authorize(Policy = Policies.SuperAdminOnly)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> GrantSuperAdmin(
+        Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GrantSuperAdminCommand(userId), cancellationToken);
+
+        return result.IsSuccess ? NoContent() : HandleFailure(result);
+    }
+
     [HttpDelete("admins/{userId:guid}")]
     [Authorize(Policy = Policies.SuperAdminOnly)]
     public async Task<IActionResult> RevokeAdmin(Guid userId, CancellationToken cancellationToken)
@@ -135,7 +172,8 @@ public sealed class NetworkController(ISender sender) : ApiControllerBase(sender
             new CreateLibraryCommand(request.CityId, request.Name), cancellationToken);
 
         return result.IsSuccess
-            ? CreatedAtAction(nameof(GetLibraries), new { }, new { id = result.Value })
+            ? CreatedAtAction(nameof(GetLibraries), new { },
+                new CreatedResourceResponse(result.Value))
             : HandleFailure(result);
     }
 
@@ -162,16 +200,3 @@ public sealed class NetworkController(ISender sender) : ApiControllerBase(sender
         return result.IsSuccess ? NoContent() : HandleFailure(result);
     }
 }
-
-public sealed record InviteAdminRequest(
-    string Email, string FullName, UserRole Role, IReadOnlyList<Guid> LibraryIds, string? Message);
-
-public sealed record AcceptInvitationRequest(string Token, string Password);
-
-public sealed record AssignLibrariesRequest(IReadOnlyList<Guid> LibraryIds);
-
-public sealed record CreateLibraryRequest(Guid CityId, string Name);
-
-public sealed record DesignateHomeLibraryRequest(Guid LibraryId);
-
-public sealed record InvitationResponse(Guid InvitationId);

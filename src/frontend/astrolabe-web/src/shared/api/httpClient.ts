@@ -68,7 +68,12 @@ const CREDENTIAL_ENDPOINTS = [
   '/auth/reset-password',
   '/auth/verify-email',
   '/auth/resend-verification',
-  '/auth/accept-invitation',
+  // The real path, which lives under network rather than auth. This read '/auth/accept-invitation'
+  // until Stage 6 built the screen — a route that never existed, so the entry matched nothing and
+  // the protection it claimed was not there. Harmless so far, because the endpoint answers 409, 400
+  // and 404 and never 401; corrected rather than deleted, because accepting an invitation does
+  // establish credentials and the day it returns a 401 the guard has to be real.
+  '/network/admins/accept-invitation',
 ] as const;
 
 const establishesCredentials = (url: string | undefined): boolean =>

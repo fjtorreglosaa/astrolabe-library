@@ -19,6 +19,7 @@ import { PlaceholderScreen } from '../shared/components/PlaceholderScreen';
 import { AdminUsersPage } from '../features/users/pages/AdminUsersPage';
 import { AdminBooksPage } from '../features/admin-catalog/pages/AdminBooksPage';
 import { AdminLibrariesPage } from '../features/network/pages/AdminLibrariesPage';
+import { AcceptInvitationPage } from '../features/network/pages/AcceptInvitationPage';
 
 /**
  * The route table.
@@ -33,7 +34,7 @@ export const AppRoutes = () => (
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/verify" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<PlaceholderScreen title="Reset your password" stage="Stage 1 — pending" />} />
-      <Route path="/accept-invitation" element={<PlaceholderScreen title="Accept your invitation" stage="Stage 1 — pending" />} />
+      <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
     </Route>
 
     <Route element={<ProtectedRoute />}>

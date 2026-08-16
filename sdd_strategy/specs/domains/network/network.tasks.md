@@ -1,7 +1,7 @@
 # Network — Tasks
 
 **Last reviewed:** 2026-08-16
-**Overall progress:** 25/25 (100%)
+**Overall progress:** 29/29 (100%)
 
 Built before `identity` where the two overlap: registration validates a country and city, so the
 geography must exist first.
@@ -48,6 +48,11 @@ geography must exist first.
 | `NET-024` | `admin-libraries` screen | ✅ | `NET-022` | `AdminLibrariesPage.tsx`, `InviteAdminDialog.tsx` | Done 2026-08-16. Libraries with their home-library and withdrawn states, plus the administrator team with invitation, library assignment and revocation. Withdrawing reports what the branch still held rather than refusing — `BR-NET-005` |
 | `NET-025` | Real library obligations probe, and honour deactivation on member-facing surfaces | ✅ | — | `LibraryObligationsProbe` | Done 2026-08-16. Real counts across `catalog`, `reservations` and `billing`. Found a larger gap in the same rule: deactivation was refused on obligations (inverting `BR-NET-005`, and unsatisfiable), while nothing hid a withdrawn branch from members — a reservation against a deactivated library succeeded against the running system. Both fixed; 9 regression tests |
 
+| `NET-026` | `ResendInvitationCommand` | ✅ | `NET-021` | `ResendInvitationCommand` | `BR-NET-015`. The folder existed and was empty; the rule had no implementation at all |
+| `NET-027` | `GrantSuperAdminCommand` — extended powers | ✅ | `NET-022` | `GrantSuperAdminCommand` | The "grant extended powers" half of `BR-NET-008`, and the prototype's `elevate`. No route back, by `BR-NET-012` |
+| `NET-028` | `accept-invitation` screen | ✅ | `NET-021` | `AcceptInvitationPage.tsx` | `BR-NET-013`. The endpoint existed since Stage 1 and was unreachable, so no invitation could ever be accepted |
+| `NET-029` | Assign libraries, elevate and resend on the team table | ✅ | `NET-024` | `AssignLibrariesDialog.tsx` | The prototype's four row actions; only revoke existed |
+
 ### Status values
 
 ⬜ Not started
@@ -82,6 +87,7 @@ Every `BR-NET-*` rule needs at least one test. These are the ones that carry the
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | `NET-026` to `NET-029` | AI Agent — Claude | **Stage 6 completed.** Three rules had no implementation rather than an incomplete one: `BR-NET-015` (the `ResendInvitation` folder existed and was empty), the extended-powers half of `BR-NET-008`, and `BR-NET-013` — whose endpoint had existed since Stage 1 with no screen, so **no invitation could ever be accepted**. Verified end to end by planting an invitation with a known token hash: invited with no password → accepted → active, password set, one library assignment applied (`BR-NET-014`), signs in, and the token replays as 409. 13 tests |
 | 2026-08-16 | `NET-024` | AI Agent — Claude | **PLAN-001 Stage 6 — libraries and admins.** Super administrator only. The withdrawal confirmation states what survives the act, and the result reports what the branch was still holding, because that report is the operator's next piece of work and nothing else chases it. An administrator with no assignments is shown as such rather than as an empty cell — `BR-NET-010` describes a real state, not a fault |
 | 2026-08-16 | `NET-025` | AI Agent — Claude | **`BR-NET-005` closed, and corrected.** The probe now counts copies, live reservations and unresolved fines for real, and *reports* them instead of refusing — the old refusal inverted the rule and could never be satisfied, since stock is permanent and new loans arrive until the branch is withdrawn. The larger half was unbuilt: nothing hid a deactivated branch, so it stayed in the catalogue and a reservation against it returned HTTP 200. `BookProjection` now drops copies at withdrawn branches and `ConfirmReservationCommandHandler` refuses with `reservations.library_inactive`. 9 tests, the reservation ones verified in red |
 | 2026-08-15 | — | AI Agent — Claude | **Architecture review, `GLOBAL-016` and `GLOBAL-017`.** `network` moved under `Features/` in all three layers; handlers now depend on `INetworkUnitOfWork` instead of individual repositories. No business rule changed; 265 tests green throughout |

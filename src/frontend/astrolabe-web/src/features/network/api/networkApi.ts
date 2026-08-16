@@ -1,6 +1,7 @@
 import { httpClient } from '../../../shared/api/httpClient';
 import type { UserRole } from '../../auth/api/authApi';
 import type { UserStatus } from '../../users/api/usersApi';
+import type { CreatedResource } from '../../../shared/api/created';
 
 export interface Library {
   id: string;
@@ -67,7 +68,6 @@ export const getAdmins = async (): Promise<Admin[]> => {
   return data;
 };
 
-/** Answers `{ invitationId }`, not `{ id }` — see the note on `createBookDraft` and `GLOBAL-022`. */
 export const inviteAdmin = async (input: {
   email: string;
   fullName: string;
@@ -75,11 +75,31 @@ export const inviteAdmin = async (input: {
   libraryIds: string[];
   message: string | null;
 }): Promise<string> => {
-  const { data } = await httpClient.post<{ invitationId: string }>(
-    '/api/v1/network/admins',
-    input,
+  const { data } = await httpClient.post<CreatedResource>('/api/v1/network/admins', input);
+  return data.id;
+};
+
+/**
+ * BR-NET-015. Issues a fresh invitation and kills every one still outstanding for that account.
+ *
+ * Takes the user rather than an invitation, because that is what the console has in front of it and
+ * because the rule is about the account, not about one link somebody happened to name.
+ */
+export const resendInvitation = async (userId: string): Promise<string> => {
+  const { data } = await httpClient.post<CreatedResource>(
+    `/api/v1/network/admins/${userId}/resend-invitation`,
   );
-  return data.invitationId;
+  return data.id;
+};
+
+/**
+ * The "grant extended powers" half of BR-NET-008: raises an administrator to super administrator.
+ *
+ * There is no route back on purpose. BR-NET-012 keeps the network from ever being left without a
+ * super administrator, and a demotion command would let two of them undo each other into that state.
+ */
+export const grantSuperAdmin = async (userId: string): Promise<void> => {
+  await httpClient.post(`/api/v1/network/admins/${userId}/grant-super-admin`);
 };
 
 export const assignLibraries = async (userId: string, libraryIds: string[]): Promise<void> => {
@@ -91,7 +111,7 @@ export const revokeAdmin = async (userId: string): Promise<void> => {
 };
 
 export const createLibrary = async (cityId: string, name: string): Promise<string> => {
-  const { data } = await httpClient.post<{ id: string }>('/api/v1/network/libraries', {
+  const { data } = await httpClient.post<CreatedResource>('/api/v1/network/libraries', {
     cityId,
     name,
   });
@@ -104,4 +124,15 @@ export const deactivateLibrary = async (libraryId: string): Promise<LibraryOblig
     `/api/v1/network/libraries/${libraryId}`,
   );
   return data;
+};
+
+/**
+ * BR-NET-013. Anonymous: the invitee has no account to sign into yet, and the token is the only
+ * thing proving they own the address.
+ *
+ * The password is sent exactly as typed. It is never trimmed — a password may legitimately contain
+ * spaces, and removing them would lock somebody out of the account they had just created.
+ */
+export const acceptInvitation = async (token: string, password: string): Promise<void> => {
+  await httpClient.post('/api/v1/network/admins/accept-invitation', { token, password });
 };
