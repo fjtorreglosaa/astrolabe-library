@@ -331,10 +331,14 @@ aggregate root, not before.
 | 5 | `store` | ✅ Done — 17/17 |
 | 6 | Administration surfaces | ✅ Done — user directory, book management, libraries and admins |
 | 7 | `recommendations` | ✅ Done — 18/18 |
-| 8 | Hardening and acceptance | ⬜ Not started — must run last |
+| 8 | Hardening and acceptance | 🔄 Seed data and freshness done; **coverage gap open** (`GLOBAL-024`, `GLOBAL-025`) |
 | 9 | `support`, `notifications` | ✅ Done — 12/12 and 12/12 |
 
 Open decisions awaiting the user:
+
+- `GLOBAL-024` / `GLOBAL-025` — the Stage 8 coverage gap, measured but not closed. Domain 63%,
+  Application 35%, Infrastructure 31%, Presentation 4%, against targets of 90/80/70/70. 96 of 217
+  business rules are cited in no test.
 
 - `BLOCK-006` — the Mailgun sandbox only delivers to authorised recipients. Needs an account
   change on your side, not a decision.

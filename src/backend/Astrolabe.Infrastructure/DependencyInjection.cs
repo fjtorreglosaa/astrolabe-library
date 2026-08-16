@@ -72,6 +72,7 @@ public static class DependencyInjection
         services.AddIdentityServices(configuration);
         services.AddScoped<NetworkSeeder>();
         services.AddScoped<DemoAccountSeeder>();
+        services.AddScoped<DemoDirectorySeeder>();
         services.AddScoped<MembershipSeeder>();
         services.AddScoped<CatalogSeeder>();
 
