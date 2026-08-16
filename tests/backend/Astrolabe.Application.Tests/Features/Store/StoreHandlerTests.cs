@@ -70,8 +70,8 @@ public sealed class StoreHandlerTests
         _locations.Setup(l => l.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<Guid, BookProjection.LibraryLocation>
             {
-                [Midtown] = new(Midtown, "Midtown", HomeCity, "New York"),
-                [Loop] = new(Loop, "Loop", OtherCity, "Chicago"),
+                [Midtown] = new(Midtown, "Midtown", HomeCity, "New York", IsActive: true),
+                [Loop] = new(Loop, "Loop", OtherCity, "Chicago", IsActive: true),
             });
     }
 
@@ -120,7 +120,13 @@ public sealed class StoreHandlerTests
     }
 
     private QuoteOrderQueryHandler QuoteHandler() =>
-        new(_store.Object, _entitlements.Object, _locations.Object);
+        new(_store.Object, _entitlements.Object, _locations.Object, _currentUser.Object);
+
+    /// <summary>Gives the member a balance to spend. BR-STR-007.</summary>
+    private void WithPointsBalance(int pointCents) =>
+        _store.Points
+            .Setup(r => r.GetBalanceAsync(MemberId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pointCents);
 
     private PlaceOrderCommandHandler PlaceHandler() =>
         new(_store.Object, _billing.Object, _audit.Object, _entitlements.Object,
@@ -136,7 +142,7 @@ public sealed class StoreHandlerTests
         var book = ABook(heldAt: Loop);
 
         var quote = await QuoteHandler()
-            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection), Ct);
+            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection, PointsToRedeem: 0), Ct);
 
         quote.Value.Lines[0].DiscountPercent.Should().Be(15);
         quote.Value.DiscountTotalCents.Should().BeGreaterThan(0);
@@ -149,7 +155,7 @@ public sealed class StoreHandlerTests
         var book = ABook(heldAt: Midtown);
 
         var quote = await QuoteHandler()
-            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection), Ct);
+            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection, PointsToRedeem: 0), Ct);
 
         quote.Value.Lines[0].DiscountPercent.Should().Be(10);
     }
@@ -163,7 +169,7 @@ public sealed class StoreHandlerTests
         var book = ABook(heldAt: Loop);
 
         var quote = await QuoteHandler()
-            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection), Ct);
+            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection, PointsToRedeem: 0), Ct);
 
         quote.Value.Lines[0].DiscountPercent.Should().Be(0);
         quote.Value.DiscountNote.Should().Contain("held elsewhere");
@@ -176,7 +182,7 @@ public sealed class StoreHandlerTests
         var book = ABook(priceCents: 1900, heldAt: Midtown);
 
         var quote = await QuoteHandler()
-            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection), Ct);
+            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Collection, PointsToRedeem: 0), Ct);
 
         quote.Value.TotalCents.Should().Be(1900);
         quote.Value.DiscountTotalCents.Should().Be(0);
@@ -191,10 +197,10 @@ public sealed class StoreHandlerTests
         var card = ACard();
 
         var quote = await QuoteHandler()
-            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Shipping), Ct);
+            .Handle(new QuoteOrderQuery([book.Id], OrderFulfilment.Shipping, PointsToRedeem: 0), Ct);
 
         var order = await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Shipping, card.Id, null), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Shipping, card.Id, PointsToRedeem: 0, null), Ct);
 
         order.Value.TotalCents.Should().Be(quote.Value.TotalCents);
         order.Value.PointsEarned.Should().Be(quote.Value.PointsWouldEarn);
@@ -211,13 +217,144 @@ public sealed class StoreHandlerTests
         var card = ACard();
 
         await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, null), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, PointsToRedeem: 0, null), Ct);
 
         _billing.Ledger.Verify(r => r.AddRangeAsync(
             It.Is<IEnumerable<LedgerEntry>>(entries =>
                 entries.Count(e => e.Kind == LedgerEntryKind.Charge) == 1
                 && entries.Count(e => e.Kind == LedgerEntryKind.Payment) == 1),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // ---------- Redeeming points, BR-STR-007 ----------
+
+    [Test]
+    public async Task RedeemingPoints_LeavesTheLedgerBalanced()
+    {
+        // The charge is the full total and the two tenders settle it between them. Netting the
+        // points off the charge instead would leave the member's own statement unable to show they
+        // had spent a reward at all — and netting only one side would leave them standing in debit
+        // by exactly the points they had just spent.
+        var book = ABook(priceCents: 4_500, heldAt: Midtown);
+        var card = ACard();
+        WithPointsBalance(1_000);
+
+        await PlaceHandler().Handle(new PlaceOrderCommand(
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id,
+            PointsToRedeem: 1_000, null), Ct);
+
+        // A charge is stored negative and a tender positive, so "balanced" is literally that the
+        // entries sum to zero — the member is left owing nothing and holding nothing.
+        _billing.Ledger.Verify(r => r.AddRangeAsync(
+            It.Is<IEnumerable<LedgerEntry>>(entries =>
+                entries.Count() == 3
+                && entries.Count(e => e.Kind == LedgerEntryKind.Payment) == 2
+                && entries.Sum(e => e.Amount.Cents) == 0),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task RedeemingPoints_WritesANegativeMovementInTheSameCommit()
+    {
+        // Never in a reaction. A redemption lost after the commit would give the books away for
+        // points the member still holds.
+        var book = ABook(priceCents: 4_500, heldAt: Midtown);
+        var card = ACard();
+        WithPointsBalance(1_000);
+
+        await PlaceHandler().Handle(new PlaceOrderCommand(
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id,
+            PointsToRedeem: 1_000, null), Ct);
+
+        _store.Points.Verify(r => r.AddAsync(
+            It.Is<PointsMovement>(m => m.PointCents == -1_000), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task RedeemingMoreThanTheBalance_IsRefusedAndChargesNothing()
+    {
+        var book = ABook(priceCents: 4_500, heldAt: Midtown);
+        var card = ACard();
+        WithPointsBalance(500);
+
+        var result = await PlaceHandler().Handle(new PlaceOrderCommand(
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id,
+            PointsToRedeem: 1_000, null), Ct);
+
+        result.Error.Should().Be(StoreErrors.RedemptionExceedsBalance);
+        _store.Saved.Should().Be(0);
+    }
+
+    [Test]
+    public async Task RedeemingMoreThanHalfThePurchase_IsRefused()
+    {
+        var book = ABook(priceCents: 4_500, heldAt: Midtown);
+        var card = ACard();
+        WithPointsBalance(90_000);
+
+        var result = await PlaceHandler().Handle(new PlaceOrderCommand(
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id,
+            PointsToRedeem: 3_000, null), Ct);
+
+        result.Error.Should().Be(StoreErrors.RedemptionExceedsCap);
+        _store.Saved.Should().Be(0);
+    }
+
+    [Test]
+    public async Task TheQuoteAndThePurchaseAgreeOnTheAmountCharged()
+    {
+        // The whole reason pricing is shared. A member who is shown one figure and charged another
+        // has been lied to, whichever of the two is arithmetically right.
+        var book = ABook(priceCents: 4_500, heldAt: Midtown);
+        var card = ACard();
+        WithPointsBalance(1_000);
+
+        var quote = await QuoteHandler().Handle(
+            new QuoteOrderQuery([book.Id], OrderFulfilment.Collection, PointsToRedeem: 1_000), Ct);
+
+        var order = await PlaceHandler().Handle(new PlaceOrderCommand(
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id,
+            PointsToRedeem: 1_000, null), Ct);
+
+        quote.Value.AmountChargedCents.Should().Be(order.Value.AmountChargedCents);
+        quote.Value.PointsWouldEarn.Should().Be(order.Value.PointsEarned);
+    }
+
+    [Test]
+    public async Task TheQuoteNeverOffersMoreThanThePurchaseWouldAccept()
+    {
+        // The control the member drags is bounded by this number, so an over-large request is
+        // clamped rather than refused — a quote is not a commitment, and erroring while somebody is
+        // still moving a slider would leave the modal with nothing to render.
+        var book = ABook(priceCents: 4_500, heldAt: Midtown);
+        WithPointsBalance(90_000);
+
+        var quote = await QuoteHandler().Handle(
+            new QuoteOrderQuery([book.Id], OrderFulfilment.Collection, PointsToRedeem: 90_000), Ct);
+
+        // 1912, not 2250: the fixture's member is on Max, so $45 less 15% is $38.25 and half of
+        // that is $19.12. The cap sits on the post-discount total on purpose — letting points go
+        // first would quietly shrink what the plan discount is worth.
+        quote.Value.MaxRedeemablePointCents.Should().Be(1_912);
+        quote.Value.PointsRedeemed.Should().Be(1_912);
+        quote.Value.PointsBalance.Should().Be(90_000);
+    }
+
+    [Test]
+    public async Task ADeliveryFeeCannotBeCoveredByPoints()
+    {
+        // The cap is measured on the books alone, so shipping never widens it.
+        var book = ABook(priceCents: 4_500, heldAt: Midtown);
+        WithPointsBalance(90_000);
+
+        var collection = await QuoteHandler().Handle(
+            new QuoteOrderQuery([book.Id], OrderFulfilment.Collection, PointsToRedeem: 90_000), Ct);
+        var shipped = await QuoteHandler().Handle(
+            new QuoteOrderQuery([book.Id], OrderFulfilment.Shipping, PointsToRedeem: 90_000), Ct);
+
+        shipped.Value.MaxRedeemablePointCents
+            .Should().Be(collection.Value.MaxRedeemablePointCents);
     }
 
     [Test]
@@ -229,7 +366,7 @@ public sealed class StoreHandlerTests
         var card = ACard();
 
         await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, null), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, PointsToRedeem: 0, null), Ct);
 
         book.CopyAt(Midtown)!.AvailableCount.Should().Be(before);
     }
@@ -241,7 +378,7 @@ public sealed class StoreHandlerTests
         var card = ACard();
 
         var order = await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, null), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, PointsToRedeem: 0, null), Ct);
 
         order.Value.PointsEarned.Should().Be(85);
         _store.Points.Verify(r => r.AddAsync(
@@ -257,7 +394,7 @@ public sealed class StoreHandlerTests
         var card = ACard();
 
         await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, null), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, PointsToRedeem: 0, null), Ct);
 
         _store.Points.Verify(
             r => r.AddAsync(It.IsAny<PointsMovement>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -273,14 +410,14 @@ public sealed class StoreHandlerTests
         var first = Order.Place(
             MemberId, OrderFulfilment.Collection,
             [OrderLine.Create(book.Id, book.Title, 1, book.RetailPrice, 15).Value],
-            PlanTier.Max, "key-1", Now).Value;
+            PlanTier.Max, 0, "key-1", Now).Value;
 
         _store.Orders
             .Setup(r => r.GetByIdempotencyKeyAsync(MemberId, "key-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(first);
 
         var result = await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, "key-1"), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, PointsToRedeem: 0, "key-1"), Ct);
 
         result.Value.Id.Should().Be(first.Id);
         _store.Saved.Should().Be(0);
@@ -304,7 +441,7 @@ public sealed class StoreHandlerTests
         var card = ACard();
 
         var result = await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, null), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, card.Id, PointsToRedeem: 0, null), Ct);
 
         result.Error.Should().Be(StoreErrors.BookNotForSale);
         _store.Saved.Should().Be(0);
@@ -316,7 +453,7 @@ public sealed class StoreHandlerTests
         var book = ABook(heldAt: Midtown);
 
         var result = await PlaceHandler().Handle(new PlaceOrderCommand(
-            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, Guid.NewGuid(), null), Ct);
+            [new OrderLineRequest(book.Id, 1)], OrderFulfilment.Collection, Guid.NewGuid(), PointsToRedeem: 0, null), Ct);
 
         result.Error.Should().Be(BillingErrors.PaymentMethodNotFound);
     }
@@ -325,13 +462,9 @@ public sealed class StoreHandlerTests
     public async Task AnEmptyOrderIsRefused()
     {
         var result = await PlaceHandler().Handle(new PlaceOrderCommand(
-            [], OrderFulfilment.Collection, Guid.NewGuid(), null), Ct);
+            [], OrderFulfilment.Collection, Guid.NewGuid(), PointsToRedeem: 0, null), Ct);
 
         result.Error.Should().Be(StoreErrors.NothingToBuy);
     }
 
-    private sealed class FixedClock(DateTimeOffset now) : IDateTimeProvider
-    {
-        public DateTimeOffset UtcNow => now;
-    }
 }

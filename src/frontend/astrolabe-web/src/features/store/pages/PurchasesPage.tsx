@@ -13,7 +13,13 @@ import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
 import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
 import { formatDate, money } from '../../membership/planCopy';
 import { getMyOrders, getMyPoints } from '../api/storeApi';
-import { FULFILMENT_LABEL, REDEMPTION_PENDING_NOTE, pointsAsMoney } from '../storeCopy';
+import {
+  FULFILMENT_LABEL,
+  REDEMPTION_FLOOR_NOTE,
+  REDEMPTION_NEEDS_MAX_NOTE,
+  pointsAsMoney,
+} from '../storeCopy';
+import { useAuth } from '../../auth/components/AuthProvider';
 
 const PAGE_SIZE = 10;
 
@@ -26,6 +32,7 @@ const PAGE_SIZE = 10;
  */
 export const PurchasesPage = () => {
   const [page, setPage] = useState(1);
+  const { plan } = useAuth();
 
   const orders = useQuery({
     queryKey: ['store', 'orders', page],
@@ -68,19 +75,27 @@ export const PurchasesPage = () => {
               </Typography>
             </Stack>
 
-            <Chip
-              size="small"
-              variant="outlined"
-              color={points.data.earnsPoints ? 'primary' : 'default'}
-              label={points.data.earnsPoints ? 'Earning' : 'Max plan only'}
-            />
+            <Stack direction="row" spacing={1}>
+              {/* Two facts, not one. Earning is a Max benefit; spending what you already earned is
+                  open to every plan, which is what makes BR-STR-008 mean anything. */}
+              <Chip
+                size="small"
+                variant="outlined"
+                color={points.data.earnsPoints ? 'primary' : 'default'}
+                label={points.data.earnsPoints ? 'Earning' : 'Earning: Max only'}
+              />
+              {points.data.canRedeem ? (
+                <Chip size="small" variant="outlined" color="success" label="Spendable" />
+              ) : null}
+            </Stack>
           </Stack>
 
-          {/* The redemption rule is undefined and the feature is not built. A balance with no way to
-              spend it and no explanation reads as a fault; saying so reads as a promise. */}
+          {/* A balance that cannot be spent needs a reason, or it reads as a fault — and the two
+              reasons are different. Too few points is a matter of time; the wrong plan is
+              BR-STR-008, and that sentence has to say the points are safe. */}
           {points.data.balancePointCents > 0 && !points.data.canRedeem ? (
             <Alert severity="info" sx={{ mt: 2 }} icon={<MaterialSymbol name="schedule" size={20} />}>
-              {REDEMPTION_PENDING_NOTE}
+              {plan === 'Max' ? REDEMPTION_FLOOR_NOTE : REDEMPTION_NEEDS_MAX_NOTE}
             </Alert>
           ) : null}
         </Paper>
@@ -156,6 +171,14 @@ export const PurchasesPage = () => {
                         size="small"
                         variant="outlined"
                         label={`Delivery ${money(order.shippingFeeCents)}`}
+                      />
+                    ) : null}
+                    {order.pointsRedeemed > 0 ? (
+                      <Chip
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                        label={`−${order.pointsRedeemed} pts · paid ${money(order.amountChargedCents)}`}
                       />
                     ) : null}
                     {order.pointsEarned > 0 ? (

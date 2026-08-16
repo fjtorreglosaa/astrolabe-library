@@ -10,9 +10,8 @@ namespace Astrolabe.Domain.Features.Store.Entities;
 /// never a stored number. There is no method here that changes a movement after construction.
 /// </para>
 /// <para>
-/// <see cref="PointCents"/> is signed although only earnings exist today. That is what lets
-/// redemption be added as a new factory rather than as a schema change, once <c>BR-STR-007</c> is
-/// defined and <c>BLOCK-002</c> closes.
+/// <see cref="PointCents"/> is signed: positive earns, negative redeems. Redemption arrived in
+/// <c>STR-017</c> as a second factory and no schema change, which is what the sign was for.
 /// </para>
 /// </summary>
 public sealed class PointsMovement : Entity
@@ -34,7 +33,7 @@ public sealed class PointsMovement : Entity
 
     public Guid MemberId { get; private set; }
 
-    /// <summary>Signed. Positive is earned; negative is reserved for redemption, which does not exist.</summary>
+    /// <summary>Signed. Positive is earned, negative is redeemed.</summary>
     public int PointCents { get; private set; }
 
     public string Description { get; private set; } = string.Empty;
@@ -46,4 +45,14 @@ public sealed class PointsMovement : Entity
     public static PointsMovement Earned(
         Guid memberId, int pointCents, string description, Guid orderId, DateTimeOffset now) =>
         new(Guid.NewGuid(), memberId, Math.Abs(pointCents), description, orderId, now);
+
+    /// <summary>
+    /// Points spent on an order. BR-STR-007.
+    ///
+    /// Stored negative, so the balance stays a plain sum over the movements and no reader has to
+    /// know which kinds subtract.
+    /// </summary>
+    public static PointsMovement Redeemed(
+        Guid memberId, int pointCents, string description, Guid orderId, DateTimeOffset now) =>
+        new(Guid.NewGuid(), memberId, -Math.Abs(pointCents), description, orderId, now);
 }

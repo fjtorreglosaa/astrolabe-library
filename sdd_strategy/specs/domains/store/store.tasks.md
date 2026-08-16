@@ -1,9 +1,9 @@
 # Store — Tasks
 
 **Last reviewed:** 2026-08-16
-**Overall progress:** 16/16 (100%), plus one blocked
+**Overall progress:** 17/17 (100%)
 
-PLAN-001 Stage 5, less redemption. Depends on Stage 4: an order writes to `billing`'s ledger.
+PLAN-001 Stage 5. Depends on Stage 4: an order writes to `billing`'s ledger.
 
 ---
 
@@ -13,7 +13,7 @@ PLAN-001 Stage 5, less redemption. Depends on Stage 4: an order writes to `billi
 |---|---|---|
 | `BIL-010` | The ledger must exist before an order can write a charge to it | Resolved 2026-08-16 |
 | `BIL-007` | A payment method must exist before an order can be paid | Resolved 2026-08-16 |
-| `BLOCK-002` | `BR-STR-007`, the redemption cap, is undefined. **Blocks redemption only** — earning is unaffected | **Open** |
+| `BLOCK-002` | `BR-STR-007`, the redemption cap, is undefined. **Blocks redemption only** — earning is unaffected | Resolved 2026-08-16 (`GLOBAL-009`) |
 
 ---
 
@@ -36,8 +36,8 @@ PLAN-001 Stage 5, less redemption. Depends on Stage 4: an order writes to `billi
 | `STR-013` | `GetMyOrdersQuery`, `GetMyPointsQuery` | ✅ | `STR-011` | 2 queries | Neither takes a member identifier |
 | `STR-014` | `StoreController` | ✅ | `STR-013` | `StoreController` | Thin |
 | `STR-015` | Purchase modal on the catalogue | ✅ | `STR-014` | `BuyBookDialog.tsx` | Copy from the prototype |
-| `STR-016` | `purchases` screen with the points balance | ✅ | `STR-015` | `PurchasesPage.tsx` | Balance shown, not spendable |
-| `STR-017` | ~~Redemption~~ | 🔴 | `BLOCK-002` | — | **Not started. `BR-STR-007` undefined; the prototype implements no redemption** |
+| `STR-016` | `purchases` screen with the points balance | ✅ | `STR-015` | `PurchasesPage.tsx` | Balance, and why it can or cannot be spent |
+| `STR-017` | Redemption | ✅ | `BLOCK-002` | `RewardRedemptionPolicy`, `AddRewardPointRedemption` | Done 2026-08-16. Cap, floor, tender-not-discount, and the clause stopping points from earning points. Slider in the purchase modal bounded by the server's own figure. 27 tests |
 
 ### Status values
 
@@ -69,12 +69,12 @@ PLAN-001 Stage 5, less redemption. Depends on Stage 4: an order writes to `billi
 
 | Date | Task ID | Completed by | Notes |
 |---|---|---|---|
+| 2026-08-16 | `STR-017` | AI Agent — Claude | **`BLOCK-002` closed; `BR-STR-007` defined (`GLOBAL-009`).** Points cover up to half the post-discount book total, floor 100 point-cents, one point-cent to the cent. Built as a **tender, not a discount**: the order total is unchanged, the ledger carries the full charge against two payments, and the entries sum to zero — verified against the running database. The part paid in points earns nothing, which extends the principle `BR-STR-006` already applied to the discount. `BR-STR-008` deliberately left alone: spending still needs an active Max plan |
 | 2026-08-16 | `STR-001` to `STR-008` | AI Agent — Claude | Domain model. 34 tests, including one proving that rounding per line and rounding on the total differ by a cent |
 | 2026-08-16 | `STR-009`, `STR-010` | AI Agent — Claude | `PointsRepository` deliberately does not extend `IRepository<T>` — points are value, and value gets a ledger. Down-migration reverted and reapplied against the running database |
 | 2026-08-16 | `STR-011` to `STR-014` | AI Agent — Claude | 13 application tests |
 | 2026-08-16 | `STR-002` | AI Agent — Claude | **Defect found by running it.** Books were loaded without their copies, so every book looked unheld and *every discount silently became zero* — a Max member was quoted 0%. The policy was right and its own tests passed; the gap was between the repository and the policy. `GetByIdsWithCopiesAsync` added, and a handler test that fails when the old call is restored |
 | 2026-08-16 | `STR-015`, `STR-016` | AI Agent — Claude | Purchase modal and the purchases screen with the points balance. 5 frontend tests |
-| 2026-08-16 | `STR-017` | AI Agent — Claude | **Not started, blocked.** `BR-STR-007` is undefined and the prototype implements no redemption |
 
 ---
 

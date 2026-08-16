@@ -1,3 +1,4 @@
+using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Membership;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Application.Abstractions.Network;
@@ -15,7 +16,8 @@ namespace Astrolabe.Application.Features.Store.Queries.QuoteOrder;
 public sealed class QuoteOrderQueryHandler(
     IStoreUnitOfWork store,
     IEntitlementProvider entitlements,
-    ILibraryLocationProvider libraries) : IQueryHandler<QuoteOrderQuery, OrderQuoteDto>
+    ILibraryLocationProvider libraries,
+    ICurrentUser currentUser) : IQueryHandler<QuoteOrderQuery, OrderQuoteDto>
 {
     public async Task<Result<OrderQuoteDto>> Handle(
         QuoteOrderQuery request, CancellationToken cancellationToken)
@@ -52,14 +54,32 @@ public sealed class QuoteOrderQueryHandler(
             ? Order.ShippingCost
             : Money.Zero;
 
+        var balance = currentUser.UserId is { } memberId
+            ? await store.Points.GetBalanceAsync(memberId, cancellationToken)
+            : 0;
+
+        var maxRedeemable = RewardRedemptionPolicy.MaxRedeemable(member.Plan, balance, afterDiscount);
+
+        // Clamped rather than refused. A quote is not a commitment, and answering an over-large
+        // request with an error would leave the modal with nothing to render while the member is
+        // still dragging a slider.
+        var redeemed = Math.Clamp(request.PointsToRedeem, 0, maxRedeemable);
+
+        var settledInMoney = afterDiscount - Money.FromCents(redeemed);
+
         return Result.Success(new OrderQuoteDto(
             SubtotalCents: (int)subtotal.Cents,
             DiscountTotalCents: (int)discount.Cents,
             ShippingFeeCents: (int)shipping.Cents,
             TotalCents: (int)(afterDiscount + shipping).Cents,
-            // The fee earns nothing, so the quote must not imply it does.
-            PointsWouldEarn: RewardPointsPolicy.Earned(member.Plan, afterDiscount),
+            PointsBalance: balance,
+            MaxRedeemablePointCents: maxRedeemable,
+            PointsRedeemed: redeemed,
+            AmountChargedCents: (int)(settledInMoney + shipping).Cents,
+            // Neither the fee nor the part paid in points earns, so the quote must not imply either.
+            PointsWouldEarn: RewardPointsPolicy.Earned(member.Plan, settledInMoney),
             DiscountNote: StorePricing.DiscountNote(member, lines.Value),
+            RedemptionNote: StorePricing.RedemptionNote(member.Plan, balance, maxRedeemable),
             Lines: lines.Value.Select(StorePricing.ToDto).ToList()));
     }
 }

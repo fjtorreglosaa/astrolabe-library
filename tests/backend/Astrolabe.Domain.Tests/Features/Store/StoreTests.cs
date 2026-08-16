@@ -155,7 +155,7 @@ public sealed class StoreTests
 
     private static Order AnOrder(
         PlanTier plan, OrderFulfilment fulfilment, params OrderLine[] lines) =>
-        Order.Place(MemberId, fulfilment, lines, plan, null, Now).Value;
+        Order.Place(MemberId, fulfilment, lines, plan, pointsRedeemed: 0, null, Now).Value;
 
     [Test]
     public void TheTotalIsTheSumOfTheLines_NotAPercentageOfTheSubtotal()
@@ -193,7 +193,7 @@ public sealed class StoreTests
     [Test]
     public void AnOrderWithNoLinesIsRefused()
     {
-        Order.Place(MemberId, OrderFulfilment.Collection, [], PlanTier.Max, null, Now)
+        Order.Place(MemberId, OrderFulfilment.Collection, [], PlanTier.Max, 0, null, Now)
             .Error.Should().Be(StoreErrors.NothingToBuy);
     }
 

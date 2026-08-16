@@ -4,6 +4,7 @@ using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Application.Contracts.Store;
 using Astrolabe.Domain.Features.Membership.Enums;
 using Astrolabe.Domain.Features.Store.Errors;
+using Astrolabe.Domain.Features.Store.Policies;
 using Astrolabe.Domain.Features.Store.Repositories;
 using Astrolabe.Domain.Primitives;
 
@@ -34,10 +35,11 @@ public sealed class GetMyPointsQueryHandler(
         return Result.Success(new PointsSummaryDto(
             BalancePointCents: balance,
             EarnsPoints: earns,
-            // BR-STR-007 is undefined and BLOCK-002 is open, so nobody can redeem. Sent as a field
-            // rather than assumed by the client, so the interface follows the server the day the
-            // rule is decided.
-            CanRedeem: false,
+            // BR-STR-007 and BR-STR-008 together: enough points to clear the floor, and an active
+            // Max plan. The balance itself never expires — a downgrade suspends spending, it does
+            // not forfeit anything.
+            CanRedeem: RewardRedemptionPolicy.CanRedeemOn(member.Plan)
+                && balance >= RewardRedemptionPolicy.MinimumRedemptionPointCents,
             Note: NoteFor(member.Plan, balance),
             Recent: recent
                 .Select(movement => new PointsMovementDto(
@@ -46,17 +48,27 @@ public sealed class GetMyPointsQueryHandler(
     }
 
     /// <summary>
-    /// BR-STR-008: points survive a downgrade. A member who banked them on Max and moved down must
-    /// be told they still have them, not shown a balance with no explanation.
+    /// BR-STR-008: points survive a downgrade. A member who banked them on Max and moved down keeps
+    /// both the balance and the right to spend it, and must be told so plainly.
     /// </summary>
-    private static string NoteFor(PlanTier plan, int balance) => plan switch
+    private static string NoteFor(PlanTier plan, int balance)
     {
-        PlanTier.Max when balance > 0 => "You earn a point on every $1.50 you spend on books.",
-        PlanTier.Max => "Buy a book and you start earning. A point for every $1.50 you spend.",
+        var spendable = balance >= RewardRedemptionPolicy.MinimumRedemptionPointCents;
 
-        _ when balance > 0 =>
-            "Your points are safe. Redeeming them needs the Max plan, and redemption is not open yet.",
+        return plan switch
+        {
+            PlanTier.Max when spendable =>
+                "You earn a point for every $1.50 on books, and points cover up to half a purchase.",
+            PlanTier.Max when balance > 0 =>
+                $"{RewardRedemptionPolicy.MinimumRedemptionPointCents} points and you can start "
+                + "spending them. You earn one for every $1.50 on books.",
+            PlanTier.Max => "Buy a book and you start earning. A point for every $1.50 you spend.",
 
-        _ => "Reward points are a Max plan benefit."
-    };
+            // BR-STR-008: kept, not forfeited, and waiting on Max rather than lost to a downgrade.
+            _ when balance > 0 =>
+                "Your points are safe and never expire. Spending them needs the Max plan.",
+
+            _ => "Reward points are a Max plan benefit."
+        };
+    }
 }

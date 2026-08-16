@@ -65,6 +65,8 @@ public static class StorePricing
             (int)order.DiscountTotal.Cents,
             (int)order.ShippingFee.Cents,
             (int)order.Total.Cents,
+            order.PointsRedeemed,
+            (int)order.AmountCharged.Cents,
             order.PointsEarned,
             order.PlacedAt,
             order.Description,
@@ -87,6 +89,43 @@ public static class StorePricing
 
             _ => "Basic plan: no purchase discount. Plus and Max members save on every book."
         };
+    }
+
+    /// <summary>
+    /// Why the redemption control looks the way it does.
+    ///
+    /// A member holding points who is offered none on this order would read it as a fault. Saying
+    /// which of the two rules is biting — the half-the-purchase cap or the $1.00 floor — is the
+    /// difference between an explanation and a dead control.
+    /// </summary>
+    public static string RedemptionNote(PlanTier plan, int balancePointCents, int maxRedeemable)
+    {
+        if (balancePointCents <= 0)
+        {
+            return "You have no reward points yet. Max members earn one for every $1.50 on books.";
+        }
+
+        // BR-STR-008. The balance is not lost, and a member looking at points they cannot touch is
+        // owed that sentence more than anyone.
+        if (!RewardRedemptionPolicy.CanRedeemOn(plan))
+        {
+            return $"Your {balancePointCents} points are safe. Spending them needs the Max plan.";
+        }
+
+        if (maxRedeemable == 0 && balancePointCents < RewardRedemptionPolicy.MinimumRedemptionPointCents)
+        {
+            return $"You need {RewardRedemptionPolicy.MinimumRedemptionPointCents} points "
+                + "before you can spend them. Yours keep until then.";
+        }
+
+        if (maxRedeemable == 0)
+        {
+            return "This purchase is too small to spend points on. Points cover at most half of it.";
+        }
+
+        return maxRedeemable < balancePointCents
+            ? $"Points can cover half of this purchase, so up to {maxRedeemable} of yours."
+            : $"You can put all {maxRedeemable} of your points toward this purchase.";
     }
 
     private static List<CopyLocation> LocationsOf(

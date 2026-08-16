@@ -30,7 +30,7 @@ public sealed class Order : AggregateRoot
 
     private Order(
         Guid id, Guid memberId, OrderFulfilment fulfilment,
-        IEnumerable<OrderLine> lines, PlanTier plan, string? idempotencyKey,
+        IEnumerable<OrderLine> lines, PlanTier plan, int pointsRedeemed, string? idempotencyKey,
         DateTimeOffset now) : base(id)
     {
         MemberId = memberId;
@@ -52,9 +52,17 @@ public sealed class Order : AggregateRoot
 
         Total = afterDiscount + ShippingFee;
 
-        // Earned on what was paid for the books. The shipping fee is a service, not spend on books,
-        // so it does not earn — a member cannot buy points by choosing delivery.
-        PointsEarned = RewardPointsPolicy.Earned(plan, afterDiscount);
+        // BR-STR-007. Points are a tender, not a discount: the order is still worth Total, and the
+        // card is asked for the remainder. Recording it as a discount would understate what the
+        // member bought and make the receipt disagree with the ledger.
+        PointsRedeemed = pointsRedeemed;
+
+        // Earned on what was settled in money, so the shipping fee earns nothing — a member cannot
+        // buy points by choosing delivery — and neither does the part paid with points, which would
+        // otherwise regenerate themselves. Same principle BR-STR-006 already applies to the
+        // discount: a member earns on what they actually spent.
+        PointsEarned = RewardPointsPolicy.Earned(
+            plan, afterDiscount - Money.FromCents(pointsRedeemed));
 
         Raise(new OrderPlaced(Guid.NewGuid(), now, id, memberId, Total, PointsEarned, _lines.Count));
     }
@@ -78,6 +86,18 @@ public sealed class Order : AggregateRoot
     /// <summary>Point-cents earned. Zero for everyone but Max.</summary>
     public int PointsEarned { get; private set; }
 
+    /// <summary>Point-cents applied to this purchase. BR-STR-007.</summary>
+    public int PointsRedeemed { get; private set; }
+
+    /// <summary>
+    /// What the card was actually asked for.
+    ///
+    /// Derived rather than stored, unlike every other total here. The rule those obey is that a
+    /// receipt must not change its mind when a price or a plan does — and this is a subtraction of
+    /// two values that are themselves already frozen, so there is nothing left to drift.
+    /// </summary>
+    public Money AmountCharged => Total - Money.FromCents(PointsRedeemed);
+
     public DateTimeOffset PlacedAt { get; private set; }
 
     /// <summary>Deduplicates a retried purchase. BR-STR-015.</summary>
@@ -90,6 +110,7 @@ public sealed class Order : AggregateRoot
         OrderFulfilment fulfilment,
         IReadOnlyList<OrderLine> lines,
         PlanTier plan,
+        int pointsRedeemed,
         string? idempotencyKey,
         DateTimeOffset now)
     {
@@ -98,8 +119,31 @@ public sealed class Order : AggregateRoot
             return Result.Failure<Order>(StoreErrors.NothingToBuy);
         }
 
+        // The balance is the handler's to check — it is not a fact about this order. What the
+        // aggregate owns is the cap, which is a pure function of the lines, so no caller can place
+        // an order that breaks BR-STR-007 however it was routed here.
+        var afterDiscount = Money.FromCents(lines.Sum(line => line.LineTotal.Cents));
+        var cap = RewardRedemptionPolicy.CapFor(afterDiscount);
+
+        if (pointsRedeemed < 0)
+        {
+            return Result.Failure<Order>(StoreErrors.RedemptionInvalid);
+        }
+
+        // BR-STR-008, checked here as well as in the handler: the plan is on this order, so the
+        // aggregate can enforce it and no route into Place can spend points off a lapsed plan.
+        if (pointsRedeemed > 0 && !RewardRedemptionPolicy.CanRedeemOn(plan))
+        {
+            return Result.Failure<Order>(StoreErrors.RedemptionRequiresMaxPlan);
+        }
+
+        if (pointsRedeemed > cap)
+        {
+            return Result.Failure<Order>(StoreErrors.RedemptionExceedsCap);
+        }
+
         return Result.Success(new Order(
-            Guid.NewGuid(), memberId, fulfilment, lines, plan, idempotencyKey, now));
+            Guid.NewGuid(), memberId, fulfilment, lines, plan, pointsRedeemed, idempotencyKey, now));
     }
 
     /// <summary>How the ledger describes this order on the member's statement.</summary>

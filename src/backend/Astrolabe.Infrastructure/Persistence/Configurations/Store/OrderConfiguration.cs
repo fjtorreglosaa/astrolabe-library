@@ -16,6 +16,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.Fulfilment).HasConversion<string>().HasMaxLength(16).IsRequired();
         builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(16).IsRequired();
         builder.Property(o => o.PointsEarned).IsRequired();
+        builder.Property(o => o.PointsRedeemed).IsRequired();
         builder.Property(o => o.PlacedAt).IsRequired();
         builder.Property(o => o.IdempotencyKey).HasMaxLength(100);
 
@@ -29,6 +30,11 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.ComplexProperty(o => o.Total, m =>
             m.Property(x => x.Cents).HasColumnName("total_cents").IsRequired());
 
+        builder.Ignore(o => o.Description);
+
+        // Derived from two frozen columns, so there is nothing for it to drift against. Storing it
+        // would be a third figure that has to agree with the other two.
+        builder.Ignore(o => o.AmountCharged);
         builder.Ignore(o => o.Description);
         builder.Ignore(o => o.DomainEvents);
 

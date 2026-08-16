@@ -34,9 +34,11 @@ public sealed class StoreController(ISender sender) : ApiControllerBase(sender)
     public async Task<IActionResult> Quote(
         [FromQuery] Guid[] bookIds,
         [FromQuery] OrderFulfilment fulfilment = OrderFulfilment.Collection,
+        [FromQuery] int pointsToRedeem = 0,
         CancellationToken cancellationToken = default)
     {
-        var result = await Sender.Send(new QuoteOrderQuery(bookIds, fulfilment), cancellationToken);
+        var result = await Sender.Send(
+            new QuoteOrderQuery(bookIds, fulfilment, pointsToRedeem), cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
     }
@@ -71,6 +73,7 @@ public sealed class StoreController(ISender sender) : ApiControllerBase(sender)
             request.Lines.Select(line => new OrderLineRequest(line.BookId, line.Quantity)).ToList(),
             request.Fulfilment,
             request.PaymentMethodId,
+            request.PointsToRedeem,
             request.IdempotencyKey), cancellationToken);
 
         return result.IsSuccess

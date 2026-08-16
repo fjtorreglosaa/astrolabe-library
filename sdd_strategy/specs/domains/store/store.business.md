@@ -5,10 +5,9 @@
 **Version:** 1
 **Ring:** MVP
 
-> **Partially blocked.** `BR-STR-007` — the reward point redemption cap — is undefined, and the
-> prototype shows a balance without ever implementing redemption, so arbitration cannot settle it.
-> `BLOCK-002` and `GLOBAL-009` are open. **Earning points is specified and built; spending them is
-> not.** Nothing in this file invents a redemption flow.
+> **Unblocked 2026-08-16.** `BR-STR-007` is defined and redemption is built (`GLOBAL-009`,
+> `STR-017`). The prototype shows a balance and never implements spending, so the rule could not be
+> arbitrated from it and was decided instead — the reasoning is in §8.
 
 ---
 
@@ -74,10 +73,10 @@ the ledger; it holds no balance of its own.
 | ID | Rule |
 |---|---|
 | `BR-STR-005` | Only **Max** members accrue reward points |
-| `BR-STR-006` | Accrual is one point-cent per **$1.50 of the post-discount order total**, truncated downward |
-| `BR-STR-008` | Points already earned survive a downgrade, but may only be redeemed while the active plan is Max |
+| `BR-STR-006` | Accrual is one point-cent per **$1.50 of the order total settled in money**, truncated downward. That is the total after the plan discount and after any points applied, and it excludes the delivery fee. A member earns on what they actually spent |
+| `BR-STR-008` | Points already earned survive a downgrade, but may only be redeemed while the active plan is Max. The balance is **never forfeited** — a downgrade suspends spending, it does not take anything away |
 | `BR-STR-018` | A points balance is the sum of its movements, never a stored number |
-| `BR-STR-007` | **UNDEFINED — `BLOCK-002`.** The redemption cap. Not implemented, and no redemption flow exists |
+| `BR-STR-007` | Points may be applied to a purchase up to **50% of the book total after the plan discount**, excluding delivery. The smallest redemption is **100 point-cents ($1.00)**; one point-cent is one cent. Points are a **tender, not a discount** — the order total is unchanged and the card is asked for the remainder |
 
 ---
 
@@ -118,7 +117,7 @@ the ledger; it holds no balance of its own.
 
 Explicitly **not** handled by this domain:
 
-- **Redeeming points.** `BR-STR-007` is undefined and `BLOCK-002` is open. No cap, no flow, no screen
+- **Refunding an order or reversing a redemption.** Points spent are spent; the product has no returns flow for purchased books
 - Taking real money — `billing` records payments and no provider is integrated
 - Holding a balance. Money lives in `billing`'s ledger; this domain writes to it
 - Stock of any kind. A sale is a new copy, and lending stock is `reservations`'
@@ -158,9 +157,52 @@ balance."*
 - $150 pre-discount ÷ $1.50 = **100 point-cents = $1.00** — matches the plan's figure
 - $150 less 15% = $127.50 ÷ $1.50 = **85 point-cents = $0.85** — matches `BR-STR-006` as written
 
-`BR-STR-006` says *post-discount*, so the two cannot both be right. This specification follows the
-**rule**, because it is the normative statement and because earning on what the customer actually
-paid is the ordinary practice — earning on the list price effectively pays the discount twice.
-`AC-STR-006` is therefore written as 85 point-cents, and the plan's example is recorded here as an
-arithmetic slip rather than silently ignored. **Awaiting confirmation:** reply "post-discount" to
-keep this, or "pre-discount" to change the rule and the code.
+`BR-STR-006` says *post-discount*, so the two cannot both be right.
+
+**Resolved 2026-08-16 (`GLOBAL-021`): post-discount stands.** It is the normative statement, and
+earning on the list price pays the discount twice — the member is credited for money they did not
+spend, and the reward grows in proportion to how generous their plan already is, which is backwards.
+`AC-STR-006` is 85 point-cents and `PLAN-001`'s acceptance example has been corrected to $0.85.
+
+---
+
+## 9. `BR-STR-007` — how the redemption rule was decided (`GLOBAL-009`, 2026-08-16)
+
+The prototype displays `3,240 pts · redeemable` and lists "Points on every purchase" as a plan
+benefit, but implements no spending anywhere. Arbitration therefore had nothing to arbitrate, and the
+rule was decided rather than transcribed. Each part, and why:
+
+**One point-cent is one cent.** A rate would be a second place for money arithmetic to drift, and the
+prototype's own copy only reads sensibly at parity.
+
+**Capped at 50% of the book total.** At the earning rate of one point-cent per $1.50, a member needs
+roughly seventy-five orders' worth of spending to reach this ceiling on a single order — so it will
+almost never bind, which is the point. It bounds the pathological case, a long-dormant balance
+emptied into one purchase, without touching the ordinary one. 50% is also the conventional loyalty
+ceiling, so it will not surprise anyone.
+
+**Measured after the plan discount, before delivery.** After the discount, because the discount is an
+entitlement the member already holds and letting points go first would quietly shrink what their plan
+is worth. Before delivery, because delivery is a cost passed straight through — points reward buying
+books, not choosing a courier. It is the same base `BR-STR-006` earns on, so earning and spending
+cannot drift apart.
+
+**A floor of 100 point-cents.** A three-cent redemption costs a movement row, a ledger line and a line
+on the receipt to save three cents. $1.00 is the smallest amount that reads as money.
+
+**Points are a tender, not a discount.** The order total stays what the books came to, and the ledger
+records the charge in full against two payments — the card and the points. Netting them off the
+charge instead would hide from the member's own statement that they had spent a reward at all.
+
+**The part paid with points earns nothing.** Otherwise points regenerate themselves. This is not a new
+principle but the one `BR-STR-006` already applies to the discount: a member earns on what they
+actually spent.
+
+### What was deliberately *not* changed
+
+`BR-STR-008` already said redemption requires an active Max plan, and it stands. It was tempting to
+open spending to every plan on the grounds that earned points are the member's property — but the
+rule is not an oversight. A banked balance a lapsed member cannot reach is precisely what brings them
+back to Max, and the rule is careful to keep the balance rather than forfeit it. `GLOBAL-009` asked
+what the cap should be, not who may redeem, and rewriting the second under cover of the first would
+have been a product decision smuggled in as a technical one.

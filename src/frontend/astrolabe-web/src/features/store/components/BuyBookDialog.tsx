@@ -9,7 +9,9 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  Slider,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +22,13 @@ import { getMyPaymentMethods } from '../../billing/api/billingApi';
 import { BookCover } from '../../catalog/components/BookCover';
 import { money } from '../../membership/planCopy';
 import { placeOrder, quoteOrder, type OrderFulfilment } from '../api/storeApi';
-import { FULFILMENT_LABEL, FULFILMENT_NOTE, PURCHASE_IS_A_NEW_COPY } from '../storeCopy';
+import {
+  FULFILMENT_LABEL,
+  FULFILMENT_NOTE,
+  PURCHASE_IS_A_NEW_COPY,
+  REDEMPTION_RULE_NOTE,
+  pointsAsMoney,
+} from '../storeCopy';
 
 /**
  * The purchase modal, opened from a book.
@@ -39,13 +47,35 @@ export interface BuyBookDialogProps {
 export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialogProps) => {
   const queryClient = useQueryClient();
   const [fulfilment, setFulfilment] = useState<OrderFulfilment>('Collection');
-  const [placed, setPlaced] = useState<{ total: number; points: number } | null>(null);
+  const [usePoints, setUsePoints] = useState(false);
+  const [points, setPoints] = useState<number | null>(null);
+  const [placed, setPlaced] = useState<
+    { total: number; charged: number; points: number; redeemed: number } | null
+  >(null);
 
-  const quote = useQuery({
-    queryKey: ['store', 'quote', bookId, fulfilment],
-    queryFn: () => quoteOrder([bookId!], fulfilment),
+  // Priced with no redemption first, because the cap depends on what the books come to and the
+  // member has not chosen an amount yet. This is also what tells us whether to offer the control.
+  const base = useQuery({
+    queryKey: ['store', 'quote', bookId, fulfilment, 0],
+    queryFn: () => quoteOrder([bookId!], fulfilment, 0),
     enabled: bookId !== null,
   });
+
+  const maxPoints = base.data?.maxRedeemablePointCents ?? 0;
+
+  // Defaults to spending everything the order will take. A member who opens the switch wants to use
+  // their points; making them drag from zero to find that out is a worse first move.
+  const chosen = usePoints ? Math.min(points ?? maxPoints, maxPoints) : 0;
+
+  const quote = useQuery({
+    queryKey: ['store', 'quote', bookId, fulfilment, chosen],
+    queryFn: () => quoteOrder([bookId!], fulfilment, chosen),
+    enabled: bookId !== null && chosen > 0,
+  });
+
+  // The zero-redemption quote is a valid quote in its own right, so it is reused rather than
+  // fetched twice.
+  const priced = chosen > 0 ? quote.data : base.data;
 
   const cards = useQuery({
     queryKey: ['billing', 'payment-methods'],
@@ -64,9 +94,22 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
 
   const buy = useMutation({
     mutationFn: () =>
-      placeOrder({ bookId: bookId!, fulfilment, paymentMethodId: card!.id, idempotencyKey }),
+      placeOrder({
+        bookId: bookId!,
+        fulfilment,
+        paymentMethodId: card!.id,
+        idempotencyKey,
+        // Sent from the priced quote, never from the slider: the two can differ for a moment while
+        // a request is in flight, and the member must be charged what they were last shown.
+        pointsToRedeem: priced?.pointsRedeemed ?? 0,
+      }),
     onSuccess: async (order) => {
-      setPlaced({ total: order.totalCents, points: order.pointsEarned });
+      setPlaced({
+        total: order.totalCents,
+        charged: order.amountChargedCents,
+        points: order.pointsEarned,
+        redeemed: order.pointsRedeemed,
+      });
       await queryClient.invalidateQueries({ queryKey: ['store'] });
       await queryClient.invalidateQueries({ queryKey: ['billing'] });
     },
@@ -76,6 +119,8 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
     buy.reset();
     setPlaced(null);
     setFulfilment('Collection');
+    setUsePoints(false);
+    setPoints(null);
     onClose();
   };
 
@@ -92,11 +137,17 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
           <DialogContent>
             <Stack spacing={1.5}>
               <Typography variant="body2" color="text.secondary">
-                We charged {money(placed.total)} to {card?.displayName}.{' '}
+                We charged {money(placed.charged)} to {card?.displayName}.{' '}
                 {fulfilment === 'Shipping'
                   ? 'It ships in 3–5 days.'
                   : 'Collect it at the library in 2 hours.'}
               </Typography>
+              {placed.redeemed > 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  {placed.redeemed} reward points covered the remaining{' '}
+                  {pointsAsMoney(placed.redeemed)} of {money(placed.total)}.
+                </Typography>
+              ) : null}
               {placed.points > 0 ? (
                 <Alert severity="success" icon={<MaterialSymbol name="stars" size={20} />}>
                   You earned {placed.points} reward points on this purchase.
@@ -113,10 +164,10 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
             </Button>
           </DialogActions>
         </>
-      ) : quote.isLoading || !quote.data ? (
+      ) : !priced ? (
         <DialogContent>
-          {quote.isError ? (
-            <ErrorState description="We could not price that book." onRetry={() => void quote.refetch()} />
+          {base.isError ? (
+            <ErrorState description="We could not price that book." onRetry={() => void base.refetch()} />
           ) : (
             <LoadingState label="Pricing…" />
           )}
@@ -177,42 +228,103 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
               <Divider />
 
               <Stack spacing={0.75}>
-                <Row label="Price" value={money(quote.data.subtotalCents)} />
-                {quote.data.discountTotalCents > 0 ? (
+                <Row label="Price" value={money(priced.subtotalCents)} />
+                {priced.discountTotalCents > 0 ? (
                   <Row
-                    label={`${quote.data.lines[0]?.discountPercent}% plan discount`}
-                    value={`−${money(quote.data.discountTotalCents)}`}
+                    label={`${priced.lines[0]?.discountPercent}% plan discount`}
+                    value={`−${money(priced.discountTotalCents)}`}
                   />
                 ) : null}
                 <Row
                   label="Delivery"
-                  value={quote.data.shippingFeeCents === 0 ? 'Free' : money(quote.data.shippingFeeCents)}
+                  value={priced.shippingFeeCents === 0 ? 'Free' : money(priced.shippingFeeCents)}
                 />
                 <Stack
                   direction="row"
                   sx={{ justifyContent: 'space-between', alignItems: 'baseline', pt: 0.5 }}
                 >
                   <Typography variant="subtitle2">Total</Typography>
-                  <Typography variant="h6">{money(quote.data.totalCents)}</Typography>
+                  <Typography variant="h6">{money(priced.totalCents)}</Typography>
                 </Stack>
 
                 {/* A Plus member shown 0% is entitled to know that is the rule, not a fault. */}
                 <Typography variant="caption" color="text.secondary">
-                  {quote.data.discountNote}
+                  {priced.discountNote}
                 </Typography>
 
-                {quote.data.pointsWouldEarn > 0 ? (
+                {priced.pointsWouldEarn > 0 ? (
                   <Typography variant="caption" color="success.main">
-                    Earns {quote.data.pointsWouldEarn} reward points.
+                    Earns {priced.pointsWouldEarn} reward points.
                   </Typography>
                 ) : null}
               </Stack>
+
+              {/* Reward points, BR-STR-007. The control appears only when this order can actually
+                  take some — a slider that cannot move is worse than no slider, and the note says
+                  which of the two rules is biting. */}
+              {priced.pointsBalance > 0 ? (
+                <>
+                  <Divider />
+                  <Stack spacing={1}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <MaterialSymbol
+                          name="stars"
+                          size={20}
+                          sx={{ color: maxPoints > 0 ? 'primary.main' : 'text.disabled' }}
+                        />
+                        <Stack spacing={0.25}>
+                          <Typography variant="subtitle2">Use reward points</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {priced.redemptionNote}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                      <Switch
+                        checked={usePoints && maxPoints > 0}
+                        disabled={maxPoints === 0}
+                        onChange={(event) => setUsePoints(event.target.checked)}
+                        slotProps={{ input: { 'aria-label': 'Use reward points' } }}
+                      />
+                    </Stack>
+
+                    {usePoints && maxPoints > 0 ? (
+                      <Stack spacing={0.5} sx={{ px: 0.5 }}>
+                        <Slider
+                          value={chosen}
+                          min={100}
+                          max={maxPoints}
+                          step={1}
+                          marks={[
+                            { value: 100, label: '100' },
+                            { value: maxPoints, label: `${maxPoints}` },
+                          ]}
+                          onChange={(_event, value) => setPoints(value as number)}
+                          aria-label="Reward points to apply"
+                        />
+                        <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {REDEMPTION_RULE_NOTE}
+                          </Typography>
+                          <Typography variant="caption" color="primary.main">
+                            −{pointsAsMoney(priced.pointsRedeemed)}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                    ) : null}
+                  </Stack>
+                </>
+              ) : null}
 
               {card ? (
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <MaterialSymbol name="credit_card" size={20} sx={{ color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
-                    Paying with {card.displayName}
+                    Paying {money(priced.amountChargedCents)} with {card.displayName}
                   </Typography>
                 </Stack>
               ) : (
@@ -240,7 +352,7 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
               loading={buy.isPending}
               onClick={() => buy.mutate()}
             >
-              Buy for {money(quote.data.totalCents)}
+              Buy for {money(priced.amountChargedCents)}
             </Button>
           </DialogActions>
         </>

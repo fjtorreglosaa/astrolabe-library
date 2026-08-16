@@ -12,6 +12,7 @@ using Astrolabe.Domain.Features.Billing.Errors;
 using Astrolabe.Domain.Features.Billing.Repositories;
 using Astrolabe.Domain.Features.Store.Entities;
 using Astrolabe.Domain.Features.Store.Errors;
+using Astrolabe.Domain.Features.Store.Policies;
 using Astrolabe.Domain.Features.Store.Repositories;
 using Astrolabe.Domain.Primitives;
 
@@ -93,8 +94,23 @@ public sealed class PlaceOrderCommandHandler(
 
         var now = clock.UtcNow;
 
+        // BR-STR-007. The balance is a fact about the member, not about the order, so it is checked
+        // here; the cap is a pure function of the lines and the aggregate checks that itself.
+        // Read after the lines are priced, because the cap depends on what they came to.
+        var afterDiscount = Money.FromCents(lines.Value.Sum(line => line.LineTotal.Cents));
+        var balance = await store.Points.GetBalanceAsync(memberId, cancellationToken);
+
+        var redemption = RewardRedemptionPolicy.EnsureValid(
+            member.Plan, request.PointsToRedeem, balance, afterDiscount);
+
+        if (redemption.IsFailure)
+        {
+            return Result.Failure<OrderDto>(redemption.Error);
+        }
+
         var order = Order.Place(
-            memberId, request.Fulfilment, lines.Value, member.Plan, request.IdempotencyKey, now);
+            memberId, request.Fulfilment, lines.Value, member.Plan,
+            request.PointsToRedeem, request.IdempotencyKey, now);
 
         if (order.IsFailure)
         {
@@ -106,14 +122,32 @@ public sealed class PlaceOrderCommandHandler(
         // BR-STR-014. Charged and paid together, because the card is taken at the moment of
         // purchase. Writing only the charge would leave every member permanently in debit by the
         // value of everything they have ever bought.
-        await billing.Ledger.AddRangeAsync(
-            [
-                LedgerEntry.Charge(
-                    memberId, order.Value.Total, order.Value.Description, null, null, now),
-                LedgerEntry.Payment(
-                    memberId, order.Value.Total, $"Card payment — {order.Value.Description}", null, now),
-            ],
-            cancellationToken);
+        //
+        // The charge is the full total and the tenders settle it between them. Points are a way of
+        // paying, not a discount, so netting them off the charge would hide from the member's own
+        // statement that they had spent a reward at all.
+        var entries = new List<LedgerEntry>
+        {
+            LedgerEntry.Charge(memberId, order.Value.Total, order.Value.Description, null, null, now),
+        };
+
+        if (order.Value.AmountCharged.Cents > 0)
+        {
+            entries.Add(LedgerEntry.Payment(
+                memberId, order.Value.AmountCharged,
+                $"Card payment — {order.Value.Description}", null, now));
+        }
+
+        if (order.Value.PointsRedeemed > 0)
+        {
+            // The second tender. Without it the two sides would not meet and the member would be
+            // left standing in debit by exactly the points they had just spent.
+            entries.Add(LedgerEntry.Payment(
+                memberId, Money.FromCents(order.Value.PointsRedeemed),
+                $"Reward points — {order.Value.Description}", null, now));
+        }
+
+        await billing.Ledger.AddRangeAsync(entries, cancellationToken);
 
         // BR-STR-005. Zero for everyone but Max, and the aggregate already decided that.
         if (order.Value.PointsEarned > 0)
@@ -121,6 +155,18 @@ public sealed class PlaceOrderCommandHandler(
             await store.Points.AddAsync(
                 PointsMovement.Earned(
                     memberId, order.Value.PointsEarned,
+                    order.Value.Description, order.Value.Id, now),
+                cancellationToken);
+        }
+
+        // BR-STR-007. Written in the same commit as the order, never in a reaction: a redemption
+        // that could be lost after the commit would give the books away for points the member
+        // still holds.
+        if (order.Value.PointsRedeemed > 0)
+        {
+            await store.Points.AddAsync(
+                PointsMovement.Redeemed(
+                    memberId, order.Value.PointsRedeemed,
                     order.Value.Description, order.Value.Id, now),
                 cancellationToken);
         }
