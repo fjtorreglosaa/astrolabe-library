@@ -1,3 +1,5 @@
+using Astrolabe.Application.Abstractions.Realtime;
+using Astrolabe.Application.Contracts.Realtime;
 using Astrolabe.Domain.Features.Notifications.Entities;
 using Astrolabe.Domain.Features.Notifications.Enums;
 using Astrolabe.Domain.Features.Notifications.Repositories;
@@ -29,6 +31,7 @@ public sealed class NotificationRaiserTests
 
     private AstrolabeDbContext _context = null!;
     private INotificationsUnitOfWork _unitOfWork = null!;
+    private Mock<IRealtimeNotifier> _realtime = null!;
 
     private static CancellationToken Ct => TestContext.CurrentContext.CancellationToken;
 
@@ -40,13 +43,23 @@ public sealed class NotificationRaiserTests
             _context,
             new NotificationRepository(_context),
             new NotificationPreferenceRepository(_context));
+        _realtime = new Mock<IRealtimeNotifier>();
     }
 
     [TearDown]
     public void TearDown() => _context.Dispose();
 
     private NotificationRaiser Raiser() =>
-        new(_unitOfWork, new FixedClock(Now), NullLogger<NotificationRaiser>.Instance);
+        new(_unitOfWork, _realtime.Object, new FixedClock(Now),
+            NullLogger<NotificationRaiser>.Instance);
+
+    private void VerifyPushed(Times times) =>
+        _realtime.Verify(
+            r => r.NotifyMemberAsync(
+                MemberId,
+                It.Is<RealtimeEvent>(e => e.Name == RealtimeEventNames.NotificationRaised),
+                It.IsAny<CancellationToken>()),
+            times);
 
     private async Task MuteAsync(NotificationFamily family)
     {
@@ -62,7 +75,7 @@ public sealed class NotificationRaiserTests
     [Test]
     public async Task AnUnmutedKindIsDelivered()
     {
-        await Raiser().RaiseAsync(MemberId, NotificationKind.Due, "Overdue", "Detail", "/loans", Ct);
+        await Raiser().RaiseAsync(MemberId, NotificationKind.Due, "Overdue", "Detail", "/reservations", Ct);
 
         (await CountAsync()).Should().Be(1);
     }
@@ -142,11 +155,71 @@ public sealed class NotificationRaiserTests
             .Throws(new InvalidOperationException("the database is on fire"));
 
         var raiser = new NotificationRaiser(
-            broken.Object, new FixedClock(Now), NullLogger<NotificationRaiser>.Instance);
+            broken.Object, _realtime.Object, new FixedClock(Now),
+            NullLogger<NotificationRaiser>.Instance);
 
         var act = async () =>
             await raiser.RaiseAsync(MemberId, NotificationKind.Due, "Title", "Body", null, Ct);
 
         await act.Should().NotThrowAsync();
+
+        // And nothing is announced. A bell that rings for a notification that was never stored sends
+        // the member to a feed that does not contain it.
+        VerifyPushed(Times.Never());
+    }
+
+    // ---------- What reaches the browser ----------
+
+    [Test]
+    public async Task AStoredNotificationIsPushedToItsOwnerAndNobodyElse()
+    {
+        await Raiser().RaiseAsync(
+            MemberId, NotificationKind.Due, "Overdue", "Detail", "/reservations", Ct);
+
+        VerifyPushed(Times.Once());
+
+        _realtime.Verify(
+            r => r.NotifyStaffAsync(It.IsAny<RealtimeEvent>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "a member's notification is not staff's business");
+    }
+
+    [Test]
+    public async Task AMutedFamilyIsNotPushedEither()
+    {
+        // The mute is checked before anything is written, so there is nothing to announce. Pushing
+        // here would ring a bell for a notification the member deliberately turned off and that does
+        // not exist in their feed — the worst of both.
+        await MuteAsync(NotificationFamily.Payments);
+
+        await Raiser().RaiseAsync(MemberId, NotificationKind.Paid, "Paid", "Detail", "/fines", Ct);
+
+        (await CountAsync()).Should().Be(0);
+        VerifyPushed(Times.Never());
+    }
+
+    [Test]
+    public async Task ARefusedNotificationIsNotPushed()
+    {
+        await Raiser().RaiseAsync(MemberId, NotificationKind.Due, "   ", "Body", null, Ct);
+
+        VerifyPushed(Times.Never());
+    }
+
+    [Test]
+    public async Task AFailingPushNeverCostsTheNotification()
+    {
+        // The row is what the member keeps. A hub that is down must not undo it, and must not make
+        // the caller — a post-commit event handler — believe anything failed.
+        _realtime
+            .Setup(r => r.NotifyMemberAsync(
+                It.IsAny<Guid>(), It.IsAny<RealtimeEvent>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("the hub is unreachable"));
+
+        var act = async () =>
+            await Raiser().RaiseAsync(MemberId, NotificationKind.Due, "Title", "Body", null, Ct);
+
+        await act.Should().NotThrowAsync();
+        (await CountAsync()).Should().Be(1);
     }
 }

@@ -8,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Divider,
   Slider,
   Stack,
@@ -20,6 +21,7 @@ import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
 import { ErrorState, LoadingState } from '../../../shared/components/StateViews';
 import { getMyPaymentMethods } from '../../billing/api/billingApi';
 import { BookCover } from '../../catalog/components/BookCover';
+import { useMemberDefaults } from '../../settings/memberDefaults';
 import { money } from '../../membership/planCopy';
 import { placeOrder, quoteOrder, type OrderFulfilment } from '../api/storeApi';
 import {
@@ -46,7 +48,10 @@ export interface BuyBookDialogProps {
 
 export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialogProps) => {
   const queryClient = useQueryClient();
-  const [fulfilment, setFulfilment] = useState<OrderFulfilment>('Collection');
+  // The member's saved default, as the prototype reads `prefs.purchase`. They can still switch it
+  // here — the section says so, which is the whole point of calling it a default.
+  const preferredFulfilment = useMemberDefaults((state) => state.purchase);
+  const [fulfilment, setFulfilment] = useState<OrderFulfilment>(preferredFulfilment);
   const [usePoints, setUsePoints] = useState(false);
   const [points, setPoints] = useState<number | null>(null);
   const [placed, setPlaced] = useState<
@@ -93,6 +98,7 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
   );
 
   const buy = useMutation({
+    meta: { success: 'Purchase complete. It is in your orders.', silent: true },
     mutationFn: () =>
       placeOrder({
         bookId: bookId!,
@@ -118,7 +124,9 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
   const close = () => {
     buy.reset();
     setPlaced(null);
-    setFulfilment('Collection');
+    // Back to the member's own default, not to a literal. Resetting to Collection would quietly
+    // override somebody who set Shipping in Settings, every time they closed the dialog.
+    setFulfilment(preferredFulfilment);
     setUsePoints(false);
     setPoints(null);
     onClose();
@@ -174,24 +182,37 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
         </DialogContent>
       ) : (
         <>
-          <DialogTitle sx={{ pb: 1 }}>
-            <Stack direction="row" spacing={2}>
-              <Box sx={{ width: 56, flexShrink: 0 }}>
-                <BookCover bookId={bookId!} title={title} coverUrl={coverUrl} height={78} />
-              </Box>
-              <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-                <Typography variant="h6">Buy this book</Typography>
-                <Typography variant="body2" color="text.secondary" noWrap>
-                  {title}
-                </Typography>
-              </Stack>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.75, pb: 2 }}>
+            <Box sx={{ width: 38, flexShrink: 0 }}>
+              <BookCover bookId={bookId!} title={title} coverUrl={coverUrl} height={54} />
+            </Box>
+            <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="overline" color="text.secondary">
+                Buy this book
+              </Typography>
+              <Typography variant="h5">{title}</Typography>
             </Stack>
+            <IconButton
+              aria-label="Close"
+              onClick={close}
+              disabled={buy.isPending}
+              sx={{ mt: -0.5 }}
+            >
+              <MaterialSymbol name="close" size={19} />
+            </IconButton>
           </DialogTitle>
 
           <DialogContent>
             <Stack spacing={2.5}>
               <Stack spacing={1}>
-                <Typography variant="subtitle2">How would you like it?</Typography>
+                <Stack direction="row" spacing={1.25} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <Typography variant="overline" color="text.secondary">
+                    How do you want it?
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Your default is {FULFILMENT_LABEL[preferredFulfilment].toLowerCase()}.
+                  </Typography>
+                </Stack>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   {(['Collection', 'Shipping'] as const).map((option) => (
                     <Card
@@ -225,10 +246,11 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
                 </Stack>
               </Stack>
 
-              <Divider />
-
-              <Stack spacing={0.75}>
-                <Row label="Price" value={money(priced.subtotalCents)} />
+              <Stack
+                spacing={1}
+                sx={{ p: 2, borderRadius: '10px', border: 1, borderColor: 'divider' }}
+              >
+                <Row label="Book" value={money(priced.subtotalCents)} />
                 {priced.discountTotalCents > 0 ? (
                   <Row
                     label={`${priced.lines[0]?.discountPercent}% plan discount`}
@@ -236,15 +258,20 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
                   />
                 ) : null}
                 <Row
-                  label="Delivery"
+                  label="Shipping"
                   value={priced.shippingFeeCents === 0 ? 'Free' : money(priced.shippingFeeCents)}
                 />
+                <Box sx={{ height: '1px', bgcolor: 'divider' }} />
                 <Stack
                   direction="row"
-                  sx={{ justifyContent: 'space-between', alignItems: 'baseline', pt: 0.5 }}
+                  sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}
                 >
-                  <Typography variant="subtitle2">Total</Typography>
-                  <Typography variant="h6">{money(priced.totalCents)}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total
+                  </Typography>
+                  {/* The prototype sets the figure in serif at 22px — it is the number the member
+                      is agreeing to, and it should not read like another row. */}
+                  <Typography variant="h4">{money(priced.totalCents)}</Typography>
                 </Stack>
 
                 {/* A Plus member shown 0% is entitled to know that is the rule, not a fault. */}
@@ -342,17 +369,18 @@ export const BuyBookDialog = ({ bookId, title, coverUrl, onClose }: BuyBookDialo
             </Stack>
           </DialogContent>
 
-          <DialogActions>
-            <Button onClick={close} color="inherit" disabled={buy.isPending}>
-              Cancel
-            </Button>
+          <DialogActions sx={{ px: 3, py: 2 }}>
             <Button
               variant="contained"
               disabled={!card}
               loading={buy.isPending}
               onClick={() => buy.mutate()}
+              sx={{ flex: 1, height: 46 }}
             >
-              Buy for {money(priced.amountChargedCents)}
+              Confirm purchase
+            </Button>
+            <Button onClick={close} color="inherit" disabled={buy.isPending} sx={{ height: 46 }}>
+              Cancel
             </Button>
           </DialogActions>
         </>

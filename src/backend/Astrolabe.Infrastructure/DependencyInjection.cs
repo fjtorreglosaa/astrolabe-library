@@ -8,6 +8,7 @@ using Astrolabe.Domain.Abstractions.Persistence;
 using Astrolabe.Infrastructure.Integrations.Mail;
 using Astrolabe.Infrastructure.Features.Identity;
 using Astrolabe.Infrastructure.Features.Billing;
+using Astrolabe.Infrastructure.Features.Catalog;
 using Astrolabe.Infrastructure.Features.Membership;
 using Astrolabe.Infrastructure.Features.Network;
 using Astrolabe.Domain.Features.Audit.Repositories;
@@ -19,6 +20,7 @@ using Astrolabe.Domain.Features.Network.Repositories;
 using Astrolabe.Domain.Features.Reservations.Repositories;
 using Astrolabe.Domain.Features.Store.Repositories;
 using Astrolabe.Infrastructure.Persistence;
+using Astrolabe.Infrastructure.Realtime;
 using Astrolabe.Infrastructure.Persistence.Repositories;
 using Astrolabe.Infrastructure.Persistence.Repositories.Audit;
 using Astrolabe.Infrastructure.Persistence.Repositories.Billing;
@@ -38,7 +40,9 @@ using Astrolabe.Domain.Features.Recommendations.Repositories;
 using Astrolabe.Infrastructure.Features.Recommendations;
 using Astrolabe.Infrastructure.Integrations.Ai;
 using Astrolabe.Infrastructure.Persistence.Repositories.Recommendations;
+using Astrolabe.Application.Abstractions.Catalog;
 using Astrolabe.Application.Abstractions.Notifications;
+using Astrolabe.Application.Abstractions.Realtime;
 using Astrolabe.Domain.Features.Notifications.Repositories;
 using Astrolabe.Infrastructure.Features.Notifications;
 using Astrolabe.Infrastructure.Persistence.Repositories.Notifications;
@@ -98,6 +102,9 @@ public static class DependencyInjection
         services.AddScoped<ILibraryObligationsProbe, LibraryObligationsProbe>();
         services.AddScoped<IMemberActivityProbe, MemberActivityProbe>();
 
+        // BR-CAT-032 needs a reservations fact inside a catalogue handler. A seam, not a reference.
+        services.AddScoped<IBorrowingHistoryProbe, BorrowingHistoryProbe>();
+
         // Recommendations. The two vendor clients are registered as the same interface and picked
         // apart by AiProviderRegistry, so adding a third provider is a registration rather than a
         // change to every caller.
@@ -114,6 +121,11 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddEmail(configuration);
+
+        // SignalR itself, and the one thing the rest of the application sees of it. Everything
+        // outside this file depends on IRealtimeNotifier and knows nothing about hubs.
+        services.AddSignalR();
+        services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
         return services;
     }

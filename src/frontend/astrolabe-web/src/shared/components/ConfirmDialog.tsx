@@ -45,12 +45,16 @@ export const ConfirmDialog = ({
       </Button>
       <Button
         onClick={onConfirm}
-        disabled={busy}
+        // A spinner beside the label, rather than replacing the label with "Working…". Swapping the
+        // text takes away the one thing that says what is being confirmed, at the exact moment
+        // somebody is watching to see whether they pressed the right button. `loading` also blocks
+        // a second press for us, so the previous `disabled` is redundant.
+        loading={busy}
         variant="contained"
         color={destructive ? 'error' : 'primary'}
         autoFocus
       >
-        {busy ? 'Working…' : confirmLabel}
+        {confirmLabel}
       </Button>
     </DialogActions>
   </Dialog>

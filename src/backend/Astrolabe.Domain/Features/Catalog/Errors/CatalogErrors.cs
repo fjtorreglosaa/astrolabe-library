@@ -82,4 +82,13 @@ public static class CatalogErrors
 
     public static readonly Error ReviewNotYours =
         Error.Authorization("Catalog.ReviewNotYours", "You can only change your own review.");
+
+    /// <summary>
+    /// BR-CAT-032. The wording says what to do about it, because the member is not doing anything
+    /// wrong — they simply have not read it yet.
+    /// </summary>
+    public static readonly Error ReviewRequiresReturnedLoan =
+        Error.Validation(
+            "Catalog.ReviewRequiresReturnedLoan",
+            "You can review a book once you have borrowed it and given it back.");
 }

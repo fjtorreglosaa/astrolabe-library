@@ -1,30 +1,25 @@
 import {
-  AppBar,
   Box,
-  Divider,
   Drawer,
   IconButton,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  ListSubheader,
   Stack,
-  Toolbar,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { MaterialSymbol } from '../shared/components/MaterialSymbol';
-import { NavLink, Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useUiStore } from '../app/uiStore';
 import { fonts, radii, rem, typeScale } from '../theme/tokens';
 import { sectionsFor } from '../routes/navigation';
+import { pageTitleFor } from '../routes/pageTitle';
 import { useAuth } from '../features/auth/components/AuthProvider';
 import { UserMenu } from './UserMenu';
+import { RealtimeIndicator } from './RealtimeIndicator';
 import { AppFooter } from './AppFooter';
 import { NotificationBell } from '../features/notifications/components/NotificationBell';
 import { QuickActions } from './QuickActions';
 import { SidebarAiCard } from './SidebarAiCard';
+import { SidebarNav } from './SidebarNav';
 
 const DRAWER_WIDTH = 264;
 
@@ -33,6 +28,28 @@ const DRAWER_WIDTH = 264;
  * stay reachable — a navigation that disappears makes every jump a two-step act.
  */
 const RAIL_WIDTH = 78;
+
+/**
+ * The content column's width, from the prototype's `<main max-width:1320px; margin:0 auto>`.
+ *
+ * A ceiling, not a width: below it the column simply fills the space. Above it the content stays
+ * centred rather than stretching, because a table line that runs the full width of a wide monitor
+ * is one the eye loses its place in halfway across.
+ */
+const CONTENT_MAX_WIDTH = 1320;
+
+/**
+ * Every control in the header, at the prototype's 40x40.
+ *
+ * <p>
+ * Stated rather than inherited. An icon button left to its own devices takes its box from the
+ * padding plus whatever font-size the glyph inside it resolves to — and the Material Symbols
+ * stylesheet declares `font-size: 24px` on the same class our own rule targets, so which one wins
+ * depends on stylesheet order rather than on anything in this file. Fixing the box makes the header
+ * the same height whichever rule lands on top.
+ * </p>
+ */
+const HEADER_BUTTON = { width: 40, height: 40, flexShrink: 0 } as const;
 
 /**
  * The authenticated shell: top navbar, left sidebar, content, footer — the structure the prototype
@@ -47,6 +64,7 @@ export const AppLayout = () => {
   const colorScheme = useUiStore((state) => state.colorScheme);
   const toggleColorScheme = useUiStore((state) => state.toggleColorScheme);
   const { role, plan } = useAuth();
+  const { pathname } = useLocation();
 
   // Composed from the caller's role and plan: the role keeps administration entries away from a
   // member, and the plan keeps paid surfaces away from a member who has not bought them.
@@ -54,45 +72,7 @@ export const AppLayout = () => {
 
   const drawerContent = (
     <Stack sx={{ height: '100%' }}>
-      <Box role="navigation" aria-label="Main navigation" sx={{ overflowY: 'auto', flex: 1 }}>
-      {sections.map((section) => (
-        <List
-          key={section.label}
-          dense
-          subheader={
-            sidebarOpen ? (
-              <ListSubheader disableSticky sx={{ bgcolor: 'transparent', fontWeight: 700 }}>
-                {section.label}
-              </ListSubheader>
-            ) : undefined
-          }
-        >
-          {section.items.map((item) => (
-            <Tooltip
-              key={item.route}
-              // Only in the rail. A tooltip repeating a label that is already on screen is noise.
-              title={sidebarOpen ? '' : item.label}
-              placement="right"
-            >
-              <ListItemButton
-                component={NavLink}
-                to={item.route}
-                sx={{
-                  mx: 1,
-                  justifyContent: sidebarOpen ? 'flex-start' : 'center',
-                  px: sidebarOpen ? undefined : 1,
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: sidebarOpen ? undefined : 0 }}>
-                  <MaterialSymbol name={item.icon} size={20} />
-                </ListItemIcon>
-                {sidebarOpen ? <ListItemText primary={item.label} /> : null}
-              </ListItemButton>
-            </Tooltip>
-          ))}
-        </List>
-      ))}
-      </Box>
+      <SidebarNav sections={sections} expanded={sidebarOpen} />
 
       {/* Pinned to the foot, where the prototype puts it. */}
       <SidebarAiCard collapsed={!sidebarOpen} />
@@ -101,46 +81,6 @@ export const AppLayout = () => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
-          <IconButton edge="start" onClick={toggleSidebar} aria-label="Toggle navigation" sx={{ mr: 1 }}>
-            <MaterialSymbol name={sidebarOpen ? 'menu_open' : 'menu'} size={22} />
-          </IconButton>
-
-          <Stack direction="row" spacing={1} sx={{ flexGrow: 1, alignItems: 'center' }}>
-            <Box
-              aria-hidden
-              sx={{
-                width: 30,
-                height: 30,
-                borderRadius: `${radii.tight}px`,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                display: 'grid',
-                placeItems: 'center',
-                fontFamily: fonts.display,
-                fontSize: rem(typeScale.lead),
-                fontWeight: 600,
-              }}
-            >
-              A
-            </Box>
-            <Typography variant="h4">Astrolabe Books</Typography>
-          </Stack>
-
-          <Tooltip title={colorScheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}>
-            <IconButton
-              onClick={toggleColorScheme}
-              aria-label={colorScheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
-            >
-              <MaterialSymbol name={colorScheme === 'light' ? 'dark_mode' : 'light_mode'} size={20} />
-            </IconButton>
-          </Tooltip>
-
-          <NotificationBell />
-            <UserMenu />
-        </Toolbar>
-      </AppBar>
 
       <Drawer
         variant="permanent"
@@ -157,15 +97,145 @@ export const AppLayout = () => {
           },
         }}
       >
-        <Toolbar />
-        <Divider />
+        {/*
+          The brand lives here and only here, in the prototype's own 64px sidebar head — the same
+          height as the header beside it, so the two rules line up across the fold.
+        */}
+        <Stack
+          direction="row"
+          spacing={1.25}
+          sx={{
+            height: 64,
+            flexShrink: 0,
+            px: sidebarOpen ? 2.5 : 0,
+            alignItems: 'center',
+            justifyContent: sidebarOpen ? 'flex-start' : 'center',
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Box
+            aria-hidden
+            sx={{
+              width: 32,
+              height: 32,
+              flexShrink: 0,
+              borderRadius: `${radii.tight}px`,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              display: 'grid',
+              placeItems: 'center',
+              fontFamily: fonts.display,
+              fontSize: rem(typeScale.title),
+              fontWeight: 700,
+            }}
+          >
+            A
+          </Box>
+          {sidebarOpen ? (
+            <Typography variant="h5" noWrap>
+              Astrolabe Books
+            </Typography>
+          ) : null}
+        </Stack>
+
         {drawerContent}
       </Drawer>
 
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <Toolbar />
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-          <Outlet />
+        {/*
+          The header sits *inside* the content column, beside the sidebar rather than above it, and
+          it is the page title that goes here — the prototype's `min-height:64px; gap:14px;
+          padding:0 20px`, with 40x40 controls.
+
+          Every control is sized explicitly. Leaving them to the defaults meant an icon button whose
+          height came from whatever font-size the icon span happened to inherit, which is how they
+          ended up out of proportion with a 64px bar.
+        */}
+        <Stack
+          component="header"
+          direction="row"
+          spacing={1.75}
+          sx={{
+            minHeight: 64,
+            flexShrink: 0,
+            px: 2.5,
+            alignItems: 'center',
+            borderBottom: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            position: 'sticky',
+            top: 0,
+            zIndex: (theme) => theme.zIndex.appBar,
+          }}
+        >
+          <Tooltip title="Toggle navigation">
+            <IconButton onClick={toggleSidebar} aria-label="Toggle navigation" sx={HEADER_BUTTON}>
+              <MaterialSymbol name={sidebarOpen ? 'menu_open' : 'menu'} size={22} />
+            </IconButton>
+          </Tooltip>
+
+          <Typography variant="h4" noWrap sx={{ minWidth: 0 }}>
+            {pageTitleFor(pathname)}
+          </Typography>
+
+          <Box sx={{ flex: 1 }} />
+
+          <Tooltip title={colorScheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}>
+            <IconButton
+              onClick={toggleColorScheme}
+              aria-label={colorScheme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+              sx={HEADER_BUTTON}
+            >
+              <MaterialSymbol name={colorScheme === 'light' ? 'dark_mode' : 'light_mode'} size={22} />
+            </IconButton>
+          </Tooltip>
+
+          {/* Before the bell: it explains why the bell might be quiet. */}
+          <RealtimeIndicator />
+          <NotificationBell />
+          <UserMenu />
+        </Stack>
+        {/*
+          The prototype's own content column:
+          `flex:1; width:100%; max-width:1320px; margin:0 auto; padding:28px; overflow-x:hidden`.
+
+          The centring is the part that was missing. Without a maximum width the content stretched
+          to the full width of the window, which on a wide screen turns a table into lines the eye
+          has to track across half a metre — and left every screen looking unlike the mockup at the
+          size most people actually use.
+
+          `minWidth: 0` lets a wide table shrink inside the flex column instead of pushing the
+          layout out; `overflowX: hidden` is the prototype's matching guard.
+        */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            width: '100%',
+            maxWidth: CONTENT_MAX_WIDTH,
+            mx: 'auto',
+            p: 3.5,
+            minWidth: 0,
+            overflowX: 'hidden',
+          }}
+        >
+          {/* Keyed on the path so the transition replays on each navigation, as `fadeUp .2s
+              ease-out` does in the prototype. Skipped for a reader who asked for less motion. */}
+          <Box
+            key={pathname}
+            sx={{
+              '@media (prefers-reduced-motion: no-preference)': {
+                animation: 'astrolabe-fade-up .2s ease-out',
+              },
+              '@keyframes astrolabe-fade-up': {
+                from: { opacity: 0, transform: 'translateY(8px)' },
+                to: { opacity: 1, transform: 'translateY(0)' },
+              },
+            }}
+          >
+            <Outlet />
+          </Box>
         </Box>
         <AppFooter />
       </Box>

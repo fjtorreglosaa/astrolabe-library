@@ -17,7 +17,8 @@ interface AuthContextValue {
   plan: PlanTier | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  /** Resolves with the user who just signed in, so a caller can route on their role at once. */
+  signIn: (email: string, password: string) => Promise<CurrentUser>;
   signOut: () => Promise<void>;
 }
 
@@ -54,12 +55,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    */
   const resetServerState = useCallback(() => queryClient.resetQueries(), [queryClient]);
 
+  /**
+   * Signs in and returns who signed in.
+   *
+   * <p>
+   * The user is fetched here rather than left to the query that renders the shell, because the
+   * caller has to route on the role <em>before</em> the next render — and at that moment the context
+   * still holds the previous user, or none. Reading `role` from the context right after awaiting
+   * this would route the new person to the old person's screen.
+   * </p>
+   */
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string): Promise<CurrentUser> => {
       await signInRequest(email, password, getDeviceId());
       await resetServerState();
+
+      // Primes the same cache entry the shell reads, so this costs one request rather than two.
+      return queryClient.fetchQuery({ queryKey: ['auth', 'me'], queryFn: getCurrentUser });
     },
-    [resetServerState],
+    [queryClient, resetServerState],
   );
 
   const signOut = useCallback(async () => {

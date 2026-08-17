@@ -1,5 +1,6 @@
 import type { Reservation } from './api/reservationsApi';
 import {
+  HANDOVER_OUTCOME,
   DELIVERY_LABEL,
   IN_TRANSIT_NOTE,
   handoverCopy,
@@ -113,8 +114,21 @@ describe('handoverCopy', () => {
   });
 
   it('tells the member the reservation is not finished by the handover', () => {
+    // Asserted on the composed sentence rather than on `intro` alone. The prototype sets both state
+    // names in bold inside the paragraph, so the copy is split at the seams the emphasis needs — but
+    // what must stay true is that the member reads both words, whichever method they used.
     for (const method of ['CourierPickup', 'LibraryDropOff'] as const) {
-      expect(handoverCopy(method).intro).toContain('Return in progress');
+      const sentence =
+        handoverCopy(method).intro +
+        HANDOVER_OUTCOME.before +
+        HANDOVER_OUTCOME.middle +
+        HANDOVER_OUTCOME.after +
+        HANDOVER_OUTCOME.tail;
+
+      expect(sentence).toContain('Return in progress');
+      expect(sentence).toContain('Returned');
+      // The handover ends with the library, not with the member.
+      expect(sentence).toContain('when the library checks the parcel in');
     }
   });
 });

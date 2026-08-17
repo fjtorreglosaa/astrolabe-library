@@ -15,14 +15,22 @@ import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
 import { useUiStore } from '../../../app/uiStore';
 import { useAuth } from '../../auth/components/AuthProvider';
 import { PaymentMethodsPanel } from '../components/PaymentMethodsPanel';
+import { AiSettingsCard } from '../components/AiSettingsCard';
+import { MemberDefaultsPanel } from '../components/MemberDefaultsPanel';
+import { MembershipSummaryCard } from '../components/MembershipSummaryCard';
 
 /**
  * Settings.
  *
  * <p>
- * A hub rather than one long form. Three of these sections already had screens of their own —
- * membership, devices, notifications — and rebuilding them here would be two places to change one
- * rule. What lives inline is what has nowhere else to be: the theme, and the cards on file.
+ * The prototype's order: appearance, membership, AI, the defaults for delivery and returns and
+ * purchases, then everything that has a screen of its own.
+ * </p>
+ * <p>
+ * Where a section already has its own screen — membership, notifications, devices, the provider
+ * keys — what appears here is a <b>summary and a way through</b>, never a second copy of the form.
+ * Two places that can change one plan is two places for its rules to drift apart. What lives inline
+ * is what has nowhere else to be: the theme, the cards on file, and the three defaults.
  * </p>
  */
 export const SettingsPage = () => {
@@ -32,18 +40,13 @@ export const SettingsPage = () => {
   const colorScheme = useUiStore((state) => state.colorScheme);
   const setColorScheme = useUiStore((state) => state.setColorScheme);
 
+  // Membership and AI are not here: each has a card of its own above. A section that appears twice
+  // on one page is a section somebody will change in the wrong copy.
   const links = [
     {
-      icon: 'workspace_premium',
-      label: 'Membership',
-      note: 'Your plan, what it includes, and changing it.',
-      route: '/settings/membership',
-      memberOnly: true,
-    },
-    {
       icon: 'notifications',
-      label: 'Notification settings',
-      note: 'What reaches the bell in the header.',
+      label: 'Notification centre',
+      note: 'What reaches the bell in the header, and whether it makes a sound.',
       route: '/settings/notifications',
       memberOnly: false,
     },
@@ -55,13 +58,20 @@ export const SettingsPage = () => {
       memberOnly: false,
     },
     {
-      icon: 'auto_awesome',
-      label: 'AI recommendations',
-      note: 'Provider keys for the libraries you administer.',
-      route: '/admin/ai',
-      staffOnly: true,
+      icon: 'person',
+      label: 'My profile',
+      note: 'Your plan, your topics and your account statement.',
+      route: '/profile',
+      memberOnly: true,
     },
-  ].filter((link) => (link.staffOnly ? isStaff : link.memberOnly ? !isStaff : true));
+    {
+      icon: 'support_agent',
+      label: 'Help & support',
+      note: 'Open a ticket and an agent from your library answers it.',
+      route: '/support',
+      memberOnly: false,
+    },
+  ].filter((link) => (link.memberOnly ? !isStaff : true));
 
   return (
     <Stack spacing={4}>
@@ -101,10 +111,23 @@ export const SettingsPage = () => {
 
       <Divider />
 
-      {/* Members only: staff hold no cards here, and offering the section would be offering a
-          dead end. */}
+      {/* Members only, all three: staff hold no plan, no cards and no reservations of their own, so
+          each of these would be a dead end rather than an empty state. */}
       {isStaff ? null : (
         <>
+          <MembershipSummaryCard />
+          <Divider />
+        </>
+      )}
+
+      <AiSettingsCard />
+
+      <Divider />
+
+      {isStaff ? null : (
+        <>
+          <MemberDefaultsPanel />
+          <Divider />
           <PaymentMethodsPanel />
           <Divider />
         </>

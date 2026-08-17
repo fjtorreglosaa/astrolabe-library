@@ -106,14 +106,38 @@ export const label = {
   transform: 'uppercase',
 } as const;
 
-/** Corner radii, from the tightest control to a full pill. */
+/**
+ * Corner radii, taken from the prototype's own vocabulary.
+ *
+ * <p>
+ * `panel` is the one that matters: `border-radius:12px` is the prototype's most common container
+ * value by a wide margin — every stat card, book card, fines panel and payment card carries it.
+ * Cards were being drawn at 16 here, which is the modal radius, and the difference showed up
+ * everywhere at once.
+ * </p>
+ * <p>
+ * <b>Write radii as pixel strings in `sx`.</b> A bare number there is multiplied by
+ * `theme.shape.borderRadius` — twelve — so `borderRadius: 3` is thirty-six pixels, not the
+ * twenty-four that thinking in spacing units suggests. Every radius in this codebase is therefore
+ * stated in px.
+ * </p>
+ */
 export const radii = {
+  /** Cover thumbnails and other small blocks. */
+  thumb: 4,
   tight: 6,
+  /** Tinted strips, inline notices, code fields. */
   control: 8,
+  /** Inputs, option cards, tiles. */
   input: 10,
+  /** Cards and panels. The prototype's default container. */
   panel: 12,
+  /** Modals. */
   card: 16,
+  /** A 44px control. */
   pill: 22,
+  /** Large enough to round any control to a pill, whatever its height. */
+  round: 999,
 } as const;
 
 export const elevation = {

@@ -38,6 +38,7 @@ export const AcceptInvitationPage = () => {
   const [confirmation, setConfirmation] = useState('');
 
   const accept = useMutation({
+    meta: { silent: true },
     mutationFn: () => acceptInvitation(token, password),
   });
 

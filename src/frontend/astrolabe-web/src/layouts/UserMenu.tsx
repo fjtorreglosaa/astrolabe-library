@@ -49,10 +49,14 @@ export const UserMenu = () => {
 
         <Divider />
 
-        <MenuItem onClick={() => go('/profile')}>
-          <ListItemIcon><MaterialSymbol name="person" size={18} /></ListItemIcon>
-          My profile
-        </MenuItem>
+        {/* Member-only, for the same reason as Membership below: the profile is a plan, a points
+            balance, an account statement and a reading history, and staff have none of the four. */}
+        {user.isStaff ? null : (
+          <MenuItem onClick={() => go('/profile')}>
+            <ListItemIcon><MaterialSymbol name="person" size={18} /></ListItemIcon>
+            My profile
+          </MenuItem>
+        )}
         <MenuItem onClick={() => go('/settings')}>
           <ListItemIcon><MaterialSymbol name="tune" size={18} /></ListItemIcon>
           Settings

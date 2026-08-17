@@ -1,3 +1,4 @@
+using Astrolabe.Application.Abstractions.Catalog;
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Membership;
 using Astrolabe.Application.Abstractions.Network;
@@ -66,6 +67,19 @@ public sealed class CatalogHandlerTests
             {
                 [LibraryId] = new(LibraryId, "Midtown", CityId, "New York", IsActive: true)
             });
+    }
+
+    /// <summary>
+    /// A history probe that says the member returned the book. BR-CAT-032 is covered on its own in
+    /// <see cref="ReviewRequiresReturnedLoanTests"/>; these tests are about everything after it.
+    /// </summary>
+    private static IBorrowingHistoryProbe AReturnedLoan()
+    {
+        var probe = new Mock<IBorrowingHistoryProbe>();
+        probe.Setup(p => p.HasReturnedAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        return probe.Object;
     }
 
     private static Book ABook(BookStatus status = BookStatus.Catalog)
@@ -269,7 +283,7 @@ public sealed class CatalogHandlerTests
             .ReturnsAsync(existing);
 
         var result = await new PublishReviewCommandHandler(
-                _catalog.Object, _currentUser.Object, new FixedClock(Now))
+                _catalog.Object, AReturnedLoan(), _currentUser.Object, new FixedClock(Now))
             .Handle(new PublishReviewCommand(book.Id, 2, "Changed my mind"), Ct);
 
         result.IsSuccess.Should().BeTrue();
@@ -283,7 +297,7 @@ public sealed class CatalogHandlerTests
     public async Task AReviewOutsideTheStarScale_IsRefusedBeforeTheBookIsEvenLoaded()
     {
         var result = await new PublishReviewCommandHandler(
-                _catalog.Object, _currentUser.Object, new FixedClock(Now))
+                _catalog.Object, AReturnedLoan(), _currentUser.Object, new FixedClock(Now))
             .Handle(new PublishReviewCommand(Guid.NewGuid(), 9, null), Ct);
 
         result.Error.Should().Be(CatalogErrors.RatingOutOfRange);
@@ -298,7 +312,7 @@ public sealed class CatalogHandlerTests
         TheCatalogHolds(book);
 
         var result = await new PublishReviewCommandHandler(
-                _catalog.Object, _currentUser.Object, new FixedClock(Now))
+                _catalog.Object, AReturnedLoan(), _currentUser.Object, new FixedClock(Now))
             .Handle(new PublishReviewCommand(book.Id, 4, null), Ct);
 
         result.Error.Should().Be(CatalogErrors.BookNotFound);

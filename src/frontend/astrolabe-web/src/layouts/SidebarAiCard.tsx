@@ -75,7 +75,7 @@ export const SidebarAiCard = ({ collapsed }: { collapsed: boolean }) => {
       sx={{
         m: 1.5,
         p: 1.5,
-        borderRadius: 2,
+        borderRadius: '8px',
         border: 1,
         borderColor: 'divider',
         bgcolor: 'action.hover',

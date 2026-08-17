@@ -16,7 +16,7 @@ public interface IReservationRepository : IRepository<Reservation>
     /// asking.
     /// </summary>
     Task<PagedResult<Reservation>> GetForMemberAsync(
-        Guid memberId, ReservationStatus? status, int page, int pageSize,
+        Guid memberId, ReservationStatus? status, string? term, int page, int pageSize,
         CancellationToken cancellationToken = default);
 
     /// <summary>Backs BR-RSV-007. Two active reservations of one physical copy make no sense.</summary>

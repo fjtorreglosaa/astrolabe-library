@@ -192,7 +192,7 @@ const Stat = ({ label, value, warn }: { label: string; value: string; warn?: boo
     sx={{
       flex: '1 1 45%',
       p: 1.5,
-      borderRadius: 1,
+      borderRadius: '8px',
       border: 1,
       borderColor: warn ? 'error.light' : 'divider',
     }}

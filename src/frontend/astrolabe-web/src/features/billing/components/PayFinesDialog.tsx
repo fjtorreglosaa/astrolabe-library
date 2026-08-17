@@ -80,6 +80,7 @@ export const PayFinesDialog = ({ open, fines, onClose }: PayFinesDialogProps) =>
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['billing'] });
 
   const pay = useMutation({
+    meta: { success: 'Payment received. Your receipt is in your statement.', silent: true },
     mutationFn: async () => {
       if (isDesk) {
         const code = await issueDeskPayment(picked);
@@ -244,7 +245,7 @@ export const PayFinesDialog = ({ open, fines, onClose }: PayFinesDialogProps) =>
                 component="code"
                 sx={{
                   p: 1.5,
-                  borderRadius: 1,
+                  borderRadius: '8px',
                   bgcolor: 'action.hover',
                   fontSize: '1.25rem',
                   textAlign: 'center',

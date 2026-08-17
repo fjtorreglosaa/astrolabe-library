@@ -44,6 +44,7 @@ export const MembershipPage = () => {
   };
 
   const change = useMutation({
+    meta: { silent: true },
     mutationFn: changePlan,
     onSuccess: async () => {
       setTarget(null);

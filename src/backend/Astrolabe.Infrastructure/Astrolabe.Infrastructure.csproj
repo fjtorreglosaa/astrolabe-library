@@ -5,6 +5,12 @@
     <ProjectReference Include="..\Astrolabe.Domain\Astrolabe.Domain.csproj" />
   </ItemGroup>
 
+  <!-- SignalR's server types live in the shared framework rather than in a package. A framework
+       reference brings the hub abstractions in without turning this class library into a web app. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="MediatR" />
@@ -25,6 +31,16 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <!--
+      NU1510 only. The framework reference above makes several of these packages redundant, and
+      NuGet is right that they could be dropped - but they are pinned deliberately, most of all
+      Microsoft.AspNetCore.DataProtection, whose 10.0.0 carried a critical advisory. An explicit
+      version is a floor the shared framework cannot silently lower.
+
+      Scoped to this one rule on purpose. Vulnerability warnings are NU1901-NU1904 and are still
+      errors here; the whole reason that advisory was caught was that the warning count moved.
+    -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

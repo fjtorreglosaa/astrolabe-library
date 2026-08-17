@@ -46,7 +46,9 @@ export const AuthLayout = () => (
     </Container>
 
     <Box component="footer" sx={{ py: 3, textAlign: 'center' }}>
-      <Typography variant="overline" color="text.secondary">
+      {/* Sentence case, matching the prototype and the app footer. `overline` is the theme's
+          uppercase micro-label and turned this line into a shouted heading. */}
+      <Typography variant="caption" color="text.secondary">
         © 2026 Astrolabe Books · New York · Chicago · Austin
       </Typography>
     </Box>

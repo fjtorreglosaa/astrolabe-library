@@ -56,6 +56,7 @@ export const InviteAdminDialog = ({
   };
 
   const invite = useMutation({
+    meta: { silent: true },
     mutationFn: () =>
       inviteAdmin({
         email: email.trim(),

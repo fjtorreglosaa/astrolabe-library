@@ -122,6 +122,7 @@ export const BookWizardDialog = ({ open, onClose, onSaved }: BookWizardDialogPro
   };
 
   const save = useMutation({
+    meta: { silent: true },
     mutationFn: async (publish: boolean) => {
       const id = await createBookDraft({
         isbn: draft.isbn.trim(),

@@ -19,7 +19,7 @@ public sealed class NotifyOnReturnStartedHandler(INotificationRaiser raiser)
             NotificationKind.Transit,
             "Your return is on its way",
             "The reservation closes once a librarian checks the copy in.",
-            route: "/loans",
+            route: "/reservations",
             cancellationToken);
     }
 }

@@ -25,7 +25,7 @@ public sealed class GetMyReservationsQueryHandler(
         }
 
         var page = await reservations.Reservations.GetForMemberAsync(
-            memberId, request.Status, request.Page, request.PageSize, cancellationToken);
+            memberId, request.Status, request.Term, request.Page, request.PageSize, cancellationToken);
 
         // The books and the geography are each fetched once for the page rather than per row: a
         // listing of twenty loans would otherwise be forty extra round trips for facts that cannot

@@ -61,6 +61,7 @@ export const BookLifecycleDialog = ({
   };
 
   const act = useMutation({
+    meta: { silent: true },
     mutationFn: async () => {
       if (!book || !kind) {
         return;

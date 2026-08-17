@@ -18,7 +18,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
+import { EmptyState, ErrorState } from '../../../shared/components/StateViews';
+import { TableSkeleton } from '../../../shared/components/TableSkeleton';
 import { formatDate } from '../../membership/planCopy';
 import { useAuth } from '../../auth/components/AuthProvider';
 import {
@@ -106,6 +107,7 @@ export const AdminUsersPage = () => {
   };
 
   const act = useMutation({
+    meta: { silent: true },
     mutationFn: () => administerUser(pending!.userId, pending!.action),
     onSuccess: async () => {
       setNotice(`“${pending!.name}” — done.`);
@@ -199,7 +201,7 @@ export const AdminUsersPage = () => {
       </Stack>
 
       {users.isLoading ? (
-        <LoadingState label="Loading the directory…" />
+        <TableSkeleton rows={5} label="Loading the directory" />
       ) : users.isError || !users.data ? (
         <ErrorState
           description="We could not load the directory."

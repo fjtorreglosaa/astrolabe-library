@@ -21,7 +21,7 @@ export const BookCover = ({ bookId, title, coverUrl, height = 180, width }: Book
       height,
       width: width ?? '100%',
       flexShrink: 0,
-      borderRadius: 1.5,
+      borderRadius: '6px',
       overflow: 'hidden',
       display: 'flex',
       alignItems: 'center',

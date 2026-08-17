@@ -5,6 +5,7 @@ using Astrolabe.Infrastructure;
 using Astrolabe.Infrastructure.Persistence;
 using Astrolabe.Presentation.Extensions;
 using Astrolabe.Presentation.Identity;
+using Astrolabe.Infrastructure.Realtime;
 using Astrolabe.Presentation.Middleware;
 using Astrolabe.Presentation.Options;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -93,6 +94,12 @@ app.UseAuthorization();
 // the endpoints, so it covers every one of them without an attribute per route.
 app.UseMiddleware<NoStoreForAuthenticatedResponsesMiddleware>();
 app.MapControllers();
+
+// Mounted here rather than in Infrastructure so the hub sits behind the same pipeline as every
+// controller: CORS, authentication, the session check that enforces BR-IDN-023, then authorization.
+// A revoked session therefore cannot open a connection, which is the point of putting it after
+// SessionValidationMiddleware rather than in front of it.
+app.MapHub<RealtimeHub>(HubRoutes.Realtime);
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {

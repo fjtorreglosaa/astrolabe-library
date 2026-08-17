@@ -22,6 +22,7 @@ import { z } from 'zod';
 import { toProblemDetails } from '../../../shared/api/httpClient';
 import { rem, typeScale } from '../../../theme/tokens';
 import { useAuth } from '../components/AuthProvider';
+import { homeRouteFor } from '../homeRoute';
 
 /**
  * The three seeded accounts, with the shared password from the prototype's own sign-in screen.
@@ -75,10 +76,18 @@ export const LoginPage = () => {
     setFailure(null);
 
     try {
-      await signIn(values.email, values.password);
+      const signedIn = await signIn(values.email, values.password);
 
+      // Two separate things. Where to land with nothing remembered depends on *who* signed in —
+      // `/home` is the member dashboard and answers 403 to staff, so it is nobody's default.
+      //
+      // The remembered path is a different matter: it belongs to whoever was bounced to this screen,
+      // who is not necessarily whoever just signed in. It is still honoured, because the role guards
+      // now cover every member-only route and send the wrong person to their own home. Correcting it
+      // there rather than here keeps one routing table instead of a second copy that can drift.
       const from = (location.state as { from?: string } | null)?.from;
-      navigate(from ?? '/home', { replace: true });
+
+      navigate(from ?? homeRouteFor(signedIn.role), { replace: true });
     } catch (error) {
       setFailure(toProblemDetails(error).title ?? 'The email address or password is incorrect.');
     }
@@ -185,7 +194,7 @@ export const LoginPage = () => {
               sx={{
                 px: 0.75,
                 py: 0.25,
-                borderRadius: 1,
+                borderRadius: '8px',
                 bgcolor: 'action.hover',
                 fontSize: rem(typeScale.micro),
               }}

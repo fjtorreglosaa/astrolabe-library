@@ -13,10 +13,32 @@ public sealed class ReservationRepository(AstrolabeDbContext context)
         [ReservationStatus.Reserved, ReservationStatus.InTransit];
 
     public async Task<PagedResult<Reservation>> GetForMemberAsync(
-        Guid memberId, ReservationStatus? status, int page, int pageSize,
-        CancellationToken cancellationToken = default) =>
-        await PageAsync(
-            ReadOnlyQuery.Where(r => r.MemberId == memberId), status, page, pageSize, cancellationToken);
+        Guid memberId, ReservationStatus? status, string? term, int page, int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ReadOnlyQuery.Where(r => r.MemberId == memberId);
+
+        // BR-RSV-025. The title and the author live on the book, not on the reservation, so the
+        // filter is a subquery against the catalogue rather than a column on this table.
+        //
+        // Applied *before* paging, deliberately. Filtering the page after it was fetched would give
+        // a member on page one no results for a book sitting on page three — a search that answers
+        // "nothing found" about something they own is worse than no search.
+        //
+        // ILike and a trimmed pattern, matching BR-CAT-018: the same wording finds the same book in
+        // the catalogue and in this list.
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            var pattern = $"%{term.Trim()}%";
+
+            query = query.Where(r => Context.Books.Any(book =>
+                book.Id == r.BookId
+                && (EF.Functions.ILike(book.Title, pattern)
+                    || EF.Functions.ILike(book.Author, pattern))));
+        }
+
+        return await PageAsync(query, status, page, pageSize, cancellationToken);
+    }
 
     public async Task<bool> HasActiveForCopyAsync(
         Guid memberId, Guid bookCopyId, CancellationToken cancellationToken = default) =>

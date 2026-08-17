@@ -105,7 +105,9 @@ owns it.
 | `AC-RSV-011` | A reservation one day past its due date reports overdue without any job having run | `BR-RSV-010` |
 | `AC-RSV-012` | Checking in three days late records three days late and charges nothing | `BR-RSV-020` |
 | `AC-RSV-014` | A return thirty minutes past the due moment counts as one day late, and one exactly three days past counts as three | `BR-RSV-024` |
+| `BR-RSV-025` | A member may filter their own reservations by book title or author. The match is case-insensitive and ignores surrounding whitespace, and is applied before paging |
 | `AC-RSV-013` | A member requesting another member's reservations receives their own | `BR-RSV-021` |
+| `AC-RSV-016` | Filtering by a title on a later page still finds it, because the filter runs before the page is taken | `BR-RSV-025` |
 
 ---
 

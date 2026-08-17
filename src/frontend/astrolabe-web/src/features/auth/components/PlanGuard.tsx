@@ -2,6 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { LoadingState } from '../../../shared/components/StateViews';
 import type { PlanTier } from '../../membership/api/membershipApi';
 import { useAuth } from './AuthProvider';
+import { homeRouteFor } from '../homeRoute';
 
 /**
  * Hides routes that a member's plan does not include.
@@ -14,14 +15,16 @@ import { useAuth } from './AuthProvider';
  * A convenience, not a boundary: the API refuses the call regardless.
  */
 export const PlanGuard = ({ allow }: { allow: readonly PlanTier[] }) => {
-  const { plan, isLoading } = useAuth();
+  const { plan, role, isLoading } = useAuth();
 
   if (isLoading) {
     return <LoadingState />;
   }
 
   if (!plan || !allow.includes(plan)) {
-    return <Navigate to="/home" replace />;
+    // Staff hold no plan at all, so they fail this guard too and must not be sent to the member
+    // dashboard. A Basic member does belong at `/home`, and that is what they get.
+    return <Navigate to={homeRouteFor(role)} replace />;
   }
 
   return <Outlet />;

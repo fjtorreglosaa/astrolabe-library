@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  IconButton,
   Stack,
   Typography,
 } from '@mui/material';
@@ -26,6 +27,7 @@ import {
   type ReservableCopy,
 } from '../api/reservationsApi';
 import { DELIVERY_LABEL, DELIVERY_NOTE } from '../reservationCopy';
+import { useMemberDefaults } from '../../settings/memberDefaults';
 
 /**
  * The reservation modal, opened from the catalogue.
@@ -42,7 +44,8 @@ export interface ReserveDialogProps {
 
 export const ReserveDialog = ({ bookId, onClose, onReserved }: ReserveDialogProps) => {
   const queryClient = useQueryClient();
-  const [delivery, setDelivery] = useState<DeliveryMethod>('Collection');
+  const preferredDelivery = useMemberDefaults((state) => state.delivery);
+  const [delivery, setDelivery] = useState<DeliveryMethod>(preferredDelivery);
   const [libraryId, setLibraryId] = useState<string | null>(null);
 
   const quote = useQuery({
@@ -69,6 +72,7 @@ export const ReserveDialog = ({ bookId, onClose, onReserved }: ReserveDialogProp
   }, [quote.data]);
 
   const confirm = useMutation({
+    meta: { success: 'Reserved. It is in your reservations now.', silent: true },
     mutationFn: () => confirmReservation(bookId!, libraryId!, delivery, idempotencyKey),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['reservations'] });
@@ -79,7 +83,7 @@ export const ReserveDialog = ({ bookId, onClose, onReserved }: ReserveDialogProp
 
   const close = () => {
     confirm.reset();
-    setDelivery('Collection');
+    setDelivery(preferredDelivery);
     onClose();
   };
 
@@ -97,26 +101,34 @@ export const ReserveDialog = ({ bookId, onClose, onReserved }: ReserveDialogProp
         </DialogContent>
       ) : (
         <>
-          <DialogTitle sx={{ pb: 1 }}>
-            <Stack direction="row" spacing={2}>
-              <Box sx={{ width: 64, flexShrink: 0 }}>
-                <BookCover
-                  bookId={quote.data.bookId}
-                  title={quote.data.title}
-                  coverUrl={quote.data.coverUrl}
-                  height={88}
-                />
-              </Box>
-              <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-                <Typography variant="h6">{quote.data.title}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {quote.data.author}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {quote.data.planNote}
-                </Typography>
-              </Stack>
+          {/* The prototype's header: a 52x74 cover, the kicker, the title in serif, then
+              `{author} · {genre} · {tier} catalog`, and a round close button. */}
+          <DialogTitle sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, pb: 2 }}>
+            <Box sx={{ width: 52, flexShrink: 0 }}>
+              <BookCover
+                bookId={quote.data.bookId}
+                title={quote.data.title}
+                coverUrl={quote.data.coverUrl}
+                height={74}
+              />
+            </Box>
+            <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="overline" color="text.secondary">
+                Confirm reservation
+              </Typography>
+              <Typography variant="h5">{quote.data.title}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {quote.data.author} · {quote.data.genre} · {quote.data.tier} catalog
+              </Typography>
             </Stack>
+            <IconButton
+              aria-label="Close"
+              onClick={close}
+              disabled={confirm.isPending}
+              sx={{ mt: -0.5 }}
+            >
+              <MaterialSymbol name="close" size={18} />
+            </IconButton>
           </DialogTitle>
 
           <DialogContent>
@@ -136,7 +148,17 @@ export const ReserveDialog = ({ bookId, onClose, onReserved }: ReserveDialogProp
               <Divider />
 
               <Stack spacing={1}>
-                <Typography variant="subtitle2">How would you like it?</Typography>
+                <Stack direction="row" spacing={1.25} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <Typography variant="overline" color="text.secondary">
+                    How do you want it?
+                  </Typography>
+                  {/* Names the saved default rather than silently applying it. A member who set one
+                      in Settings should see it honoured here, and one who did not should learn the
+                      setting exists at the moment it would have helped. */}
+                  <Typography variant="caption" color="text.secondary">
+                    Your default is {DELIVERY_LABEL[preferredDelivery].toLowerCase()}.
+                  </Typography>
+                </Stack>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   {(['Collection', 'HomeDelivery'] as const).map((method) => (
                     <Card
@@ -171,7 +193,8 @@ export const ReserveDialog = ({ bookId, onClose, onReserved }: ReserveDialogProp
 
               <Divider />
 
-              <Stack spacing={0.75}>
+              <Stack spacing={0.75} sx={{ p: 2, borderRadius: '10px', border: 1, borderColor: 'divider' }}>
+                <Row label="Loan" value={money(0)} />
                 <Row label="Delivery" value={money(quote.data.deliveryFeeCents)} />
                 <Row label="Due back" value={formatDate(quote.data.dueOn)} />
                 <Stack

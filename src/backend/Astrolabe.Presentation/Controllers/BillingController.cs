@@ -8,6 +8,7 @@ using Astrolabe.Application.Features.Billing.Queries.GetMyLedger;
 using Astrolabe.Application.Features.Billing.Queries.GetMyPaymentMethods;
 using Astrolabe.Domain.Primitives;
 using Astrolabe.Presentation.Contracts.Billing;
+using Astrolabe.Presentation.Contracts.Common;
 using Astrolabe.Presentation.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -56,7 +57,7 @@ public sealed class BillingController(ISender sender) : ApiControllerBase(sender
     }
 
     [HttpPost("payment-methods")]
-    [ProducesResponseType<Guid>(StatusCodes.Status201Created)]
+    [ProducesResponseType<CreatedResourceResponse>(StatusCodes.Status201Created)]
     public async Task<IActionResult> AddPaymentMethod(
         [FromBody] AddPaymentMethodRequest request, CancellationToken cancellationToken)
     {
@@ -64,8 +65,11 @@ public sealed class BillingController(ISender sender) : ApiControllerBase(sender
             request.Brand, request.Last4, request.ExpiryMonthYear,
             request.CardholderName, request.MakePrimary), cancellationToken);
 
+        // Wrapped, like every other create in this API. It was the last one still answering with a
+        // bare GUID — the shape GLOBAL-022 removed because a client cannot read `.id` from a string.
         return result.IsSuccess
-            ? CreatedAtAction(nameof(GetMyPaymentMethods), new { }, result.Value)
+            ? CreatedAtAction(
+                nameof(GetMyPaymentMethods), new { }, new CreatedResourceResponse(result.Value))
             : HandleFailure(result);
     }
 

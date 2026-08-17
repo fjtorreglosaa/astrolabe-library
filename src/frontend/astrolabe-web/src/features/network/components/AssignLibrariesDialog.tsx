@@ -58,6 +58,7 @@ export const AssignLibrariesDialog = ({
   }, [admin, libraries]);
 
   const assign = useMutation({
+    meta: { silent: true },
     mutationFn: () => assignLibraries(admin!.id, selected),
     onSuccess: () => {
       onAssigned(

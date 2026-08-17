@@ -19,7 +19,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
+import { EmptyState, ErrorState } from '../../../shared/components/StateViews';
+import { TableSkeleton } from '../../../shared/components/TableSkeleton';
 import { money } from '../../membership/planCopy';
 import {
   publishBook,
@@ -96,6 +97,7 @@ export const AdminBooksPage = () => {
   });
 
   const transition = useMutation({
+    meta: { silent: true },
     mutationFn: async (input: { book: StaffBook; kind: 'publish' | 'return' | 'restore' }) => {
       if (input.kind === 'publish') {
         await publishBook(input.book.id);
@@ -200,7 +202,7 @@ export const AdminBooksPage = () => {
       </Stack>
 
       {books.isLoading ? (
-        <LoadingState label="Loading the catalogue…" />
+        <TableSkeleton rows={5} label="Loading the catalogue" />
       ) : books.isError || !books.data ? (
         <ErrorState
           description="We could not load the catalogue."

@@ -12,9 +12,9 @@ export interface QuickAction {
 
 /** A member's four. */
 export const MEMBER_ACTIONS: QuickAction[] = [
-  { icon: 'qr_code_scanner', label: 'Quick check-in', route: '/loans' },
+  { icon: 'qr_code_scanner', label: 'Quick check-in', route: '/reservations' },
   { icon: 'search', label: 'Search catalog', route: '/catalog' },
-  { icon: 'local_shipping', label: 'Delivery status', route: '/loans' },
+  { icon: 'local_shipping', label: 'Delivery status', route: '/reservations' },
   { icon: 'payments', label: 'Pay fines', route: '/fines' },
 ];
 

@@ -95,20 +95,34 @@ export const handoverCopy = (method: ReturnMethod) =>
   method === 'LibraryDropOff'
     ? {
         kicker: 'Library drop-off',
-        intro:
-          'Hand the copy to the desk, then type the code the librarian reads out. The reservation moves to Return in progress.',
+        // Split so the two state names can be emphasised in place, as the prototype does.
+        intro: 'Hand the copy to the desk, then type the code the librarian reads out. The reservation moves to ',
         codeLabel: 'Drop-off code',
         confirmLabel: 'Confirm drop-off',
         rejected: 'That drop-off code is not valid. Ask the librarian to read it again.',
       }
     : {
         kicker: 'Courier pickup',
-        intro:
-          'Hand the book to the courier, then type the code they read out. The reservation moves to Return in progress.',
+        intro: 'Hand the book to the courier, then type the code they read out. The reservation moves to ',
         codeLabel: 'Pickup code',
         confirmLabel: 'Confirm pickup',
         rejected: 'That pickup code is not valid. Ask the courier to read it again.',
       };
+
+/**
+ * The tail of the handover sentence, shared by both methods.
+ *
+ * <p>
+ * Kept apart from `intro` because the prototype sets both state names in bold inside the sentence,
+ * and a single string could not carry that without markup in the copy file.
+ * </p>
+ */
+export const HANDOVER_OUTCOME = {
+  before: 'Return in progress',
+  middle: ' and becomes ',
+  after: 'Returned',
+  tail: ' when the library checks the parcel in.',
+} as const;
 
 /** A reservation is not complete until the library has the copy — the member is told so plainly. */
 export const IN_TRANSIT_NOTE =

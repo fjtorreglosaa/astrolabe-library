@@ -234,7 +234,7 @@ const Message = ({ message }: { message: TicketMessage }) => {
         alignSelf: fromAgent ? 'flex-start' : 'flex-end',
         maxWidth: '85%',
         p: 1.5,
-        borderRadius: 2,
+        borderRadius: '10px',
         // Two sides of a conversation, told apart at a glance rather than by reading the name.
         bgcolor: fromAgent ? 'action.hover' : 'primary.main',
         color: fromAgent ? 'text.primary' : 'primary.contrastText',

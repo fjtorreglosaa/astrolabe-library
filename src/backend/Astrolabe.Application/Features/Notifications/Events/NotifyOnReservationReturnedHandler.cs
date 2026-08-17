@@ -20,7 +20,7 @@ public sealed class NotifyOnReservationReturnedHandler(INotificationRaiser raise
             NotificationKind.Returned,
             "Your book is back with us",
             "The librarian checked the copy in. Nothing else is pending on this reservation.",
-            route: "/loans",
+            route: "/reservations",
             cancellationToken);
     }
 }

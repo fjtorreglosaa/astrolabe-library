@@ -17,7 +17,8 @@ import { forgotPassword } from '../api/authApi';
 export const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
 
-  const request = useMutation({ mutationFn: () => forgotPassword(email.trim()) });
+  const request = useMutation({
+    meta: { silent: true }, mutationFn: () => forgotPassword(email.trim()) });
 
   return (
     <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>

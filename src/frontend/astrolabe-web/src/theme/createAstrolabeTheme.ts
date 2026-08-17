@@ -105,7 +105,28 @@ export const createAstrolabeTheme = (scheme: ColorScheme): Theme => {
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {
-          root: { borderRadius: radii.input, paddingInline: 16 },
+          /**
+           * The prototype's button vocabulary, counted from its own markup:
+           *
+           *   54  outlined  border:1px solid {field}; background:transparent; color:inherit
+           *   30  contained background:#0E5A6E; color:#fff
+           *    0  outlined in the brand colour — there is not one anywhere
+           *
+           * So a secondary button is **neutral**, and the teal is reserved for the single primary
+           * action on a surface. MUI's default is the opposite: an outlined button inherits
+           * `color="primary"` and renders a teal border and teal text, which is why every Cancel,
+           * Details and Reload on screen came out in the brand colour and read as green.
+           */
+          root: ({ ownerState }) => ({
+            borderRadius: radii.round,
+            paddingInline: 16,
+            ...(ownerState.variant === 'outlined' &&
+              ownerState.color === 'primary' && {
+                color: p.text,
+                borderColor: p.field,
+                '&:hover': { borderColor: p.field, backgroundColor: p.selected },
+              }),
+          }),
           sizeSmall: { fontSize: rem(typeScale.small), paddingInline: 12 },
           sizeLarge: { fontSize: rem(typeScale.bodyLarge), paddingBlock: 10 },
           // The teal glow the prototype puts under its primary action. MUI v9 dropped the
@@ -124,7 +145,7 @@ export const createAstrolabeTheme = (scheme: ColorScheme): Theme => {
         styleOverrides: {
           root: { backgroundImage: 'none' },
           // Cards are separated by a border, never by a drop shadow.
-          outlined: { borderRadius: radii.card, borderColor: p.border },
+          outlined: { borderRadius: radii.panel, borderColor: p.border },
         },
       },
 
@@ -230,7 +251,7 @@ export const createAstrolabeTheme = (scheme: ColorScheme): Theme => {
 
       MuiAlert: {
         styleOverrides: {
-          root: { borderRadius: radii.panel, fontSize: rem(typeScale.small) },
+          root: { borderRadius: radii.control, fontSize: rem(typeScale.small) },
         },
       },
 

@@ -73,9 +73,11 @@ export const getMyReservations = async (
   status?: ReservationStatus,
   page = 1,
   pageSize = 20,
+  /** Filters by book title or author — BR-RSV-025. Applied before paging, server-side. */
+  term?: string,
 ): Promise<Paged<Reservation>> => {
   const { data } = await httpClient.get<Paged<Reservation>>('/api/v1/reservations', {
-    params: { status, page, pageSize },
+    params: { status, page, pageSize, term: term?.trim() || undefined },
   });
   return data;
 };

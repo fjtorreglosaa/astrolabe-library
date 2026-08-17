@@ -35,7 +35,8 @@ public sealed class GetMyDashboardQueryHandler(
         // Returned loans are read whole rather than paged: they are what the topic breakdown is
         // built from, and a member's lifetime borrowing is a bounded set in this product.
         var returned = await reservations.Reservations.GetForMemberAsync(
-            memberId, ReservationStatus.Returned, page: 1, pageSize: PagedResult<int>.MaxPageSize,
+            memberId, ReservationStatus.Returned, term: null, page: 1,
+            pageSize: PagedResult<int>.MaxPageSize,
             cancellationToken);
 
         var bookIds = active.Select(r => r.BookId)

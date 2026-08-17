@@ -94,7 +94,7 @@ export const QuickActions = () => {
         {open ? (
           <Paper
             elevation={8}
-            sx={{ width: 268, overflow: 'hidden', borderRadius: 2 }}
+            sx={{ width: 268, overflow: 'hidden', borderRadius: '12px' }}
             role="menu"
             aria-label="Quick actions"
           >

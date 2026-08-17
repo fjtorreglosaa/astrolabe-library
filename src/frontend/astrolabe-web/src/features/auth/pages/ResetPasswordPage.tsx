@@ -23,7 +23,8 @@ export const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
 
-  const reset = useMutation({ mutationFn: () => resetPassword(token, password) });
+  const reset = useMutation({
+    meta: { silent: true }, mutationFn: () => resetPassword(token, password) });
 
   // Not trimmed, here or on the wire. A password may contain spaces and they are part of it.
   const tooShort = password.length > 0 && password.length < MINIMUM_PASSWORD_LENGTH;

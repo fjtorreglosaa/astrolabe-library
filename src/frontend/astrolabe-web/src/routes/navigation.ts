@@ -87,7 +87,7 @@ export const navigationSections: NavigationSection[] = [
   {
     label: 'My account',
     items: [
-      { route: '/loans', label: 'Book Reservations', icon: 'bookmarks', visibleTo: ['member'] },
+      { route: '/reservations', label: 'Book Reservations', icon: 'bookmarks', visibleTo: ['member'] },
       { route: '/fines', label: 'Fines & payments', icon: 'receipt_long', visibleTo: ['member'] },
       { route: '/purchases', label: 'My purchases', icon: 'shopping_bag', visibleTo: ['member'] },
       { route: '/support', label: 'Help & support', icon: 'support_agent', visibleTo: ['member'] },

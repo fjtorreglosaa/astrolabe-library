@@ -1,3 +1,4 @@
+using Astrolabe.Application.Abstractions.Catalog;
 using Astrolabe.Application.Abstractions.Identity;
 using Astrolabe.Application.Abstractions.Messaging;
 using Astrolabe.Domain.Abstractions;
@@ -11,6 +12,7 @@ namespace Astrolabe.Application.Features.Catalog.Commands.PublishReview;
 
 public sealed class PublishReviewCommandHandler(
     ICatalogUnitOfWork catalog,
+    IBorrowingHistoryProbe history,
     ICurrentUser currentUser,
     IDateTimeProvider clock) : ICommandHandler<PublishReviewCommand>
 {
@@ -30,11 +32,21 @@ public sealed class PublishReviewCommandHandler(
 
         var book = await catalog.Books.GetByIdAsync(request.BookId, cancellationToken);
 
-        // A member may review a book they never borrowed — the prototype places no restriction, and
-        // a member may have read it elsewhere. What they may not do is review one that is not there.
         if (book is null || !book.IsVisibleToMembers)
         {
             return Result.Failure(CatalogErrors.BookNotFound);
+        }
+
+        // BR-CAT-032. The prototype opens its rating dialog from a *returned* loan — `canRate: done
+        // && !isLibrarian` — and the dialog's own first line is "You returned this copy on {date}".
+        // There is no path to it from the catalogue at all.
+        //
+        // Enforced here rather than only in the browser, because the rule is what makes the average
+        // mean anything: a rating anybody can leave on a book they never opened is a number that
+        // measures reach, not quality.
+        if (!await history.HasReturnedAsync(memberId, request.BookId, cancellationToken))
+        {
+            return Result.Failure(CatalogErrors.ReviewRequiresReturnedLoan);
         }
 
         var existing = await catalog.Reviews.GetByMemberAndBookAsync(

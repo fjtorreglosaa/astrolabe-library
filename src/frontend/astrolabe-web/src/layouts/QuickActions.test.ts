@@ -29,7 +29,7 @@ describe('quick actions', () => {
     // A shortcut to a route the router does not know is worse than no shortcut: it looks like a
     // feature and behaves like a dead end.
     const routes = [
-      '/loans',
+      '/reservations',
       '/catalog',
       '/fines',
       '/admin/users',

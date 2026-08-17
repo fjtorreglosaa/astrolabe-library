@@ -10,7 +10,8 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
+import { EmptyState, ErrorState } from '../../../shared/components/StateViews';
+import { TableSkeleton } from '../../../shared/components/TableSkeleton';
 import { formatDate, money } from '../../membership/planCopy';
 import { getMyOrders, getMyPoints } from '../api/storeApi';
 import {
@@ -102,7 +103,7 @@ export const PurchasesPage = () => {
       ) : null}
 
       {orders.isLoading ? (
-        <LoadingState label="Loading your purchases…" />
+        <TableSkeleton rows={4} label="Loading your purchases" />
       ) : orders.isError || !orders.data ? (
         <ErrorState
           description="We could not load your purchases."

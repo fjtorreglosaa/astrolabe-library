@@ -35,6 +35,31 @@ public static class AuthenticationExtensions
                     // life of an expired token.
                     ClockSkew = TimeSpan.FromSeconds(jwt.ClockSkewSeconds)
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    // A browser cannot set an Authorization header on a WebSocket handshake — the
+                    // API simply does not exist — so SignalR's own convention is to put the token in
+                    // the query string. This reads it for the hub path and nowhere else.
+                    //
+                    // Narrowing it to that path matters. A token in a URL is a token in proxy logs,
+                    // in browser history and in any Referer the page emits; accepting one on the
+                    // REST surface would invite exactly that, and the REST surface has a header
+                    // available. Validation is unchanged either way — the same signature, issuer,
+                    // audience and lifetime checks configured above.
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"];
+
+                        if (!string.IsNullOrEmpty(token) &&
+                            context.HttpContext.Request.Path.StartsWithSegments(HubRoutes.Realtime))
+                        {
+                            context.Token = token;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization(options =>

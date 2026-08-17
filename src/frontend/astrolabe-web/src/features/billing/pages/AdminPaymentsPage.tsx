@@ -18,7 +18,8 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
+import { EmptyState, ErrorState } from '../../../shared/components/StateViews';
+import { TableSkeleton } from '../../../shared/components/TableSkeleton';
 import { formatDate, money } from '../../membership/planCopy';
 import {
   getDeskQueue,
@@ -50,6 +51,7 @@ export const AdminPaymentsPage = () => {
   });
 
   const act = useMutation({
+    meta: { silent: true },
     mutationFn: async () => {
       if (!acting) {
         return;
@@ -96,7 +98,7 @@ export const AdminPaymentsPage = () => {
       </Stack>
 
       {queue.isLoading ? (
-        <LoadingState label="Loading the queue…" />
+        <TableSkeleton rows={5} label="Loading the queue" />
       ) : queue.isError || !queue.data ? (
         <ErrorState description="We could not load the queue." onRetry={() => void queue.refetch()} />
       ) : queue.data.items.length === 0 ? (

@@ -1,5 +1,6 @@
 import {
   Alert,
+  Box,
   Button,
   Chip,
   Dialog,
@@ -16,7 +17,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
+import { EmptyState, ErrorState } from '../../../shared/components/StateViews';
+import { ListRowsSkeleton } from '../../../shared/components/ListRowsSkeleton';
 import {
   addPaymentMethod,
   getMyPaymentMethods,
@@ -56,6 +58,7 @@ export const PaymentMethodsPanel = () => {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['billing'] });
 
   const add = useMutation({
+    meta: { silent: true },
     mutationFn: () =>
       addPaymentMethod({
         brand,
@@ -100,7 +103,7 @@ export const PaymentMethodsPanel = () => {
       </Stack>
 
       {cards.isLoading ? (
-        <LoadingState label="Loading your cards…" />
+        <ListRowsSkeleton rows={2} label="Loading your cards" />
       ) : cards.isError || !cards.data ? (
         <ErrorState description="We could not load your cards." onRetry={() => void cards.refetch()} />
       ) : cards.data.length === 0 ? (
@@ -109,35 +112,79 @@ export const PaymentMethodsPanel = () => {
           description="Add one and paying a fine or buying a book takes a single click."
         />
       ) : (
-        <Stack spacing={1}>
+        // The prototype's grid: `repeat(auto-fill, minmax(280px, 1fr))`, gap 14. Cards side by side
+        // rather than stacked full-width — a card is a small, fixed amount of information, and a row
+        // the width of the page spends most of itself on emptiness between the brand and the button.
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 1.75,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          }}
+        >
           {cards.data.map((card) => (
-            <Paper key={card.id} variant="outlined" sx={{ p: 2 }}>
-              <Stack
-                direction="row"
-                spacing={2}
-                sx={{ justifyContent: 'space-between', alignItems: 'center' }}
-              >
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                  <MaterialSymbol name="credit_card" size={24} sx={{ color: 'text.secondary' }} />
-                  <Stack spacing={0.25}>
-                    <Typography variant="subtitle2">{card.displayName}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {card.cardholderName} · expires {card.expiryMonthYear}
-                    </Typography>
-                  </Stack>
+            <Paper
+              key={card.id}
+              variant="outlined"
+              sx={{ p: 2.25, borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: 1.5 }}
+            >
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                {/* The prototype's 38x26 chip — a card shape, not a generic icon. */}
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 38,
+                    height: 26,
+                    flexShrink: 0,
+                    borderRadius: '5px',
+                    bgcolor: '#0B2E3B',
+                    color: '#fff',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <MaterialSymbol name="credit_card" size={16} />
+                </Box>
+
+                <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                    {card.brand} •••• {card.last4}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    Expires {card.expiryMonthYear} · {card.cardholderName}
+                  </Typography>
                 </Stack>
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  {card.isPrimary ? (
-                    <Chip size="small" color="primary" variant="outlined" label="Default" />
-                  ) : null}
-                  <Button size="small" color="error" onClick={() => setRemoving(card)}>
-                    Remove
-                  </Button>
-                </Stack>
+
+                {card.isPrimary ? (
+                  <Chip
+                    size="small"
+                    label="Default"
+                    sx={{
+                      flexShrink: 0,
+                      bgcolor: 'rgba(16,168,140,.14)',
+                      color: '#0C7F70',
+                    }}
+                  />
+                ) : null}
+              </Stack>
+
+              <Stack direction="row" spacing={1}>
+                {/* The prototype also offers "Make default" here. There is no endpoint for it —
+                    a card is made primary when it is added, and nothing promotes an existing one —
+                    so the control is left out rather than shown and refused. Raised as GLOBAL-028. */}
+                <Button
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  onClick={() => setRemoving(card)}
+                  sx={{ height: 34, borderRadius: '17px' }}
+                >
+                  Remove
+                </Button>
               </Stack>
             </Paper>
           ))}
-        </Stack>
+        </Box>
       )}
 
       <Alert severity="info" icon={<MaterialSymbol name="lock" size={20} />}>

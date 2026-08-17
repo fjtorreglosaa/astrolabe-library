@@ -14,6 +14,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAnnounceNewNotifications } from './useAnnounceNewNotifications';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog';
 import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
 import {
@@ -58,9 +59,14 @@ export const NotificationBell = () => {
   const feed = useQuery({
     queryKey: ['notifications'],
     queryFn: () => getMyNotifications(),
-    // The bell is on every screen, so it refetches on a timer rather than on every navigation.
-    refetchInterval: 60_000,
+    // A slow safety net, not the mechanism. The server pushes `notifications.raised` the moment a
+    // notification is written, so this only covers a member whose socket never opened — a proxy
+    // that blocks WebSockets, or an API that was down when the page loaded. Five minutes rather
+    // than the minute it used to be, because the common case no longer waits for it at all.
+    refetchInterval: 300_000,
   });
+
+  useAnnounceNewNotifications(feed.data?.items);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['notifications'] });
 

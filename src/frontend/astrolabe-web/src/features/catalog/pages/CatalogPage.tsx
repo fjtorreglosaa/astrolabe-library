@@ -12,14 +12,25 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
+import { EmptyState, ErrorState } from '../../../shared/components/StateViews';
+import { CardGridSkeleton } from '../../../shared/components/CardGridSkeleton';
+import { TablePagerBar } from '../../../shared/components/TablePagerBar';
 import { getMyMembership } from '../../membership/api/membershipApi';
-import { searchBooks, type BookSortKey, type Genre, type SortDirection } from '../api/catalogApi';
+import {
+  searchBooks,
+  type BookSortKey,
+  type BookSummary,
+  type Genre,
+  type SortDirection,
+} from '../api/catalogApi';
 import { GENRE_FILTERS, GENRE_LABEL } from '../catalogCopy';
 import { BookCard } from '../components/BookCard';
 import { BookDetailDialog } from '../components/BookDetailDialog';
+import { BuyBookDialog } from '../../store/components/BuyBookDialog';
+import { ReserveDialog } from '../../reservations/components/ReserveDialog';
 import { BookTable } from '../components/BookTable';
 
+/** The grid's page. The table carries its own control and starts at ten, as the prototype does. */
 const PAGE_SIZE = 12;
 
 /**
@@ -38,6 +49,10 @@ export const CatalogPage = () => {
   const [direction, setDirection] = useState<SortDirection>('Ascending');
   const [page, setPage] = useState(1);
   const [openBookId, setOpenBookId] = useState<string | null>(null);
+  // Separate from the panel: a card can start a reservation without opening the book first.
+  const [reservingBookId, setReservingBookId] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [buyingBook, setBuyingBook] = useState<BookSummary | null>(null);
 
   // Debounced so typing a title does not fire a query per keystroke.
   useEffect(() => {
@@ -66,7 +81,9 @@ export const CatalogPage = () => {
   const membership = useQuery({ queryKey: ['membership'], queryFn: getMyMembership });
 
   const books = useQuery({
-    queryKey: ['catalog', 'books', debouncedTerm, genre, sortBy, direction, page],
+    // `pageSize` is part of the key. Without it, changing the rows-per-page control would leave
+    // the cached page of the old size on screen and the control would appear to do nothing.
+    queryKey: ['catalog', 'books', debouncedTerm, genre, sortBy, direction, page, pageSize],
     queryFn: () =>
       searchBooks({
         term: debouncedTerm,
@@ -74,7 +91,7 @@ export const CatalogPage = () => {
         sortBy,
         direction,
         page,
-        pageSize: PAGE_SIZE,
+        pageSize,
       }),
   });
 
@@ -137,7 +154,7 @@ export const CatalogPage = () => {
       </Paper>
 
       {books.isLoading ? (
-        <LoadingState label="Loading the catalogue…" />
+        <CardGridSkeleton count={8} label="Loading the catalogue" />
       ) : books.isError || !books.data ? (
         <ErrorState
           description="We could not load the catalogue."
@@ -158,13 +175,10 @@ export const CatalogPage = () => {
             <Box
               sx={{
                 display: 'grid',
-                gap: 2,
-                gridTemplateColumns: {
-                  xs: '1fr',
-                  sm: 'repeat(2, 1fr)',
-                  md: 'repeat(3, 1fr)',
-                  lg: 'repeat(4, 1fr)',
-                },
+                gap: 2.5,
+                // The prototype's own track sizing. Fixed column counts leave a wide screen with
+                // four stretched cards and a narrow one with cards too thin to read a title on.
+                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
               }}
             >
               {books.data.items.map((book) => (
@@ -173,6 +187,9 @@ export const CatalogPage = () => {
                   book={book}
                   membership={membership.data}
                   onOpen={(selected) => setOpenBookId(selected.id)}
+                  // Straight to the reservation, as the prototype's card does. Opening the panel
+                  // first would put a screen between a member and the thing they already chose.
+                  onReserve={(selected) => setReservingBookId(selected.id)}
                 />
               ))}
             </Box>
@@ -185,11 +202,23 @@ export const CatalogPage = () => {
                 direction={direction}
                 onSort={applySort}
                 onOpen={(selected) => setOpenBookId(selected.id)}
+                onReserve={(selected) => setReservingBookId(selected.id)}
+              />
+
+              <TablePagerBar
+                page={books.data.page}
+                pageSize={pageSize}
+                totalCount={books.data.totalCount}
+                totalPages={books.data.totalPages}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
               />
             </Paper>
           )}
 
-          {books.data.totalPages > 1 ? (
+          {/* The card view keeps the centred pager: a grid has no bottom edge to hang a bar on,
+              and the prototype pages its grid the same way. */}
+          {view === 'cards' && books.data.totalPages > 1 ? (
             <Stack sx={{ alignItems: 'center' }}>
               <Pagination
                 count={books.data.totalPages}
@@ -202,10 +231,34 @@ export const CatalogPage = () => {
         </>
       )}
 
+      <ReserveDialog
+        bookId={reservingBookId}
+        onClose={() => setReservingBookId(null)}
+        onReserved={() => setReservingBookId(null)}
+      />
+
+      <BuyBookDialog
+        bookId={buyingBook?.id ?? null}
+        title={buyingBook?.title ?? ''}
+        coverUrl={buyingBook?.coverUrl ?? null}
+        onClose={() => setBuyingBook(null)}
+      />
+
       <BookDetailDialog
         bookId={openBookId}
         membership={membership.data}
         onClose={() => setOpenBookId(null)}
+        // Both close the panel first, as the prototype does — it sets `detailId:null` in the same
+        // step that opens the reservation, rather than stacking one modal on another.
+        onReserve={(id) => {
+          setOpenBookId(null);
+          setReservingBookId(id);
+        }}
+        onBuy={(id) => {
+          const chosen = books.data?.items.find((book) => book.id === id) ?? null;
+          setOpenBookId(null);
+          setBuyingBook(chosen);
+        }}
       />
     </Stack>
   );

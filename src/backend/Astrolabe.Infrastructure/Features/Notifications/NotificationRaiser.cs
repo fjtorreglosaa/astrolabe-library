@@ -1,4 +1,6 @@
 using Astrolabe.Application.Abstractions.Notifications;
+using Astrolabe.Application.Abstractions.Realtime;
+using Astrolabe.Application.Contracts.Realtime;
 using Astrolabe.Domain.Abstractions;
 using Astrolabe.Domain.Features.Notifications.Entities;
 using Astrolabe.Domain.Features.Notifications.Enums;
@@ -24,6 +26,7 @@ namespace Astrolabe.Infrastructure.Features.Notifications;
 /// </summary>
 public sealed class NotificationRaiser(
     INotificationsUnitOfWork notifications,
+    IRealtimeNotifier realtime,
     IDateTimeProvider clock,
     ILogger<NotificationRaiser> logger) : INotificationRaiser
 {
@@ -59,6 +62,18 @@ public sealed class NotificationRaiser(
 
             await notifications.Notifications.AddAsync(notification.Value, cancellationToken);
             await notifications.SaveChangesAsync(cancellationToken);
+
+            // Pushed from here rather than from the six handlers that call this, because here is the
+            // only place that knows a notification was actually written. A member who muted the
+            // family gets no row and must get no bell either — and the mute is checked above, so a
+            // push emitted by the caller would ring for a notification that does not exist.
+            await realtime.NotifyMemberAsync(
+                memberId,
+                new RealtimeEvent(
+                    RealtimeEventNames.NotificationRaised,
+                    notification.Value.OccurredAt,
+                    notification.Value.Id),
+                cancellationToken);
         }
         catch (Exception exception)
         {

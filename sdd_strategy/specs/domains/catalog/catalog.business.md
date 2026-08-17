@@ -1,5 +1,19 @@
 # Catalog — Business Specification
 
+> **Agent review note — 2026-08-16, AI Agent — Claude**
+>
+> `BR-CAT-032` and the edge case below were **corrected, not added**. This file recorded that a
+> member may review a book they never borrowed, on the stated grounds that "the prototype places no
+> restriction". The prototype does restrict it: its rating dialog is gated on
+> `canRate: done && !isLibrarian`, it is opened from a returned loan (`onRate` hangs off `l.id`,
+> a loan), there is no path to it from the catalogue, and the dialog's first line reads
+> "You returned this copy on {date}".
+>
+> The user confirmed the rule independently. Raised here because a business rule is not something an
+> agent may decide alone — the correction is recorded so the disagreement is visible rather than
+> quietly overwritten.
+
+
 **Last reviewed:** 2026-08-15
 **Reviewed by:** Francisco Torregrosa
 **Version:** 1
@@ -111,6 +125,7 @@ A member must always be told why, in the prototype's own words.
 | `BR-CAT-029` | A review is attributed with the member's name and initials, as shown in the catalogue |
 | `BR-CAT-030` | A book's displayed rating is the mean of its reviews, and a book with no reviews shows no rating rather than zero |
 | `BR-CAT-031` | Removing a review recalculates the book's rating immediately |
+| `BR-CAT-032` | A member may review a book only once they have borrowed a copy and returned it. The entry point is a returned reservation, never the catalogue |
 
 ---
 
@@ -132,6 +147,7 @@ A member must always be told why, in the prototype's own words.
 | `AC-CAT-012` | Sending a book to repair without a reason is refused | `BR-CAT-023` |
 | `AC-CAT-013` | A member reviewing the same book twice updates their review rather than creating a second | `BR-CAT-027` |
 | `AC-CAT-014` | A book with no reviews reports no rating, not a rating of zero | `BR-CAT-030` |
+| `AC-CAT-015` | A member who has never returned a copy of a book cannot review it, and nothing is written | `BR-CAT-032` |
 
 ---
 
@@ -146,7 +162,7 @@ A member must always be told why, in the prototype's own words.
 | A book is sent to repair while copies are on loan | The loans run to completion. The book simply stops appearing in member-facing search |
 | A book is restored from `deleted` | It returns to `catalog` and becomes reservable again if stock allows. Its reviews and rating survive |
 | Two members reserve the last copy at the same moment | Out of scope here. `catalog` answers whether it is reservable; `reservations` resolves the race |
-| A member reviews a book they never borrowed | Permitted. The prototype places no restriction, and a member may have read the book elsewhere |
+| A member reviews a book they never borrowed | **Refused** (`BR-CAT-032`). This entry previously said the opposite — see the agent review note at the top of this file |
 | A deleted member's reviews | Remain visible and keep counting toward the rating. Removing them would silently change a book's score |
 
 ---

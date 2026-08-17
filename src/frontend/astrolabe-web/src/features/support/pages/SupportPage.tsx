@@ -16,7 +16,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { MaterialSymbol } from '../../../shared/components/MaterialSymbol';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/components/StateViews';
+import { EmptyState, ErrorState } from '../../../shared/components/StateViews';
+import { ListRowsSkeleton } from '../../../shared/components/ListRowsSkeleton';
 import { formatDate } from '../../membership/planCopy';
 import { useAuth } from '../../auth/components/AuthProvider';
 import { getAdministeredLibraries, getLibraries } from '../../network/api/networkApi';
@@ -72,6 +73,7 @@ export const SupportPage = () => {
   });
 
   const create = useMutation({
+    meta: { silent: true },
     mutationFn: () => openTicket({ subject, body, category, libraryId }),
     onSuccess: async (ticket) => {
       setComposing(false);
@@ -126,7 +128,7 @@ export const SupportPage = () => {
       </Stack>
 
       {tickets.isLoading ? (
-        <LoadingState label="Loading tickets…" />
+        <ListRowsSkeleton rows={4} label="Loading tickets" />
       ) : tickets.isError || !tickets.data ? (
         <ErrorState description="We could not load your tickets." onRetry={() => void tickets.refetch()} />
       ) : tickets.data.items.length === 0 ? (

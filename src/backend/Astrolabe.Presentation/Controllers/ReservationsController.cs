@@ -28,12 +28,13 @@ public sealed class ReservationsController(ISender sender) : ApiControllerBase(s
     [ProducesResponseType<PagedResult<ReservationDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMine(
         [FromQuery] ReservationStatus? status,
+        [FromQuery] string? term,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
         var result = await Sender.Send(
-            new GetMyReservationsQuery(status, page, pageSize), cancellationToken);
+            new GetMyReservationsQuery(status, term, page, pageSize), cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
     }
